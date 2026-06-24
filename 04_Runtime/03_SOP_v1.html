@@ -80,24 +80,37 @@
     font-weight: 700;
   }
 
-  .sop-list { display: flex; flex-direction: column; gap: 10px; }
+  .sop-list { display: flex; flex-direction: column; gap: 8px; }
 
-  .sop-card {
+  .sop-item {
     background: #1c2333;
     border-radius: 12px;
-    padding: 14px 16px;
+    overflow: hidden;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: background 0.15s;
   }
-  .sop-card:active { background: #263045; }
-  .sop-card.selected { border: 1px solid rgba(77,163,255,0.5); }
+
+  .sop-header {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .sop-left {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
 
   .sop-title {
     font-size: 15px;
     font-weight: 600;
-    margin-bottom: 6px;
+    line-height: 1.3;
   }
+
   .sop-cat {
     display: inline-block;
     background: rgba(77,163,255,0.15);
@@ -105,27 +118,27 @@
     border-radius: 6px;
     font-size: 11px;
     padding: 2px 8px;
+    align-self: flex-start;
   }
 
+  .sop-arrow {
+    font-size: 14px;
+    opacity: 0.5;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .sop-item.open .sop-arrow { transform: rotate(180deg); }
+
   .sop-detail {
-    background: #1c2333;
-    border: 1px solid rgba(77,163,255,0.3);
-    border-radius: 12px;
-    padding: 16px;
-    margin-top: 12px;
     display: none;
-  }
-  .sop-detail.visible { display: block; }
-  .sop-detail h3 {
-    font-size: 16px;
-    margin-bottom: 10px;
-    color: #4da3ff;
-  }
-  .sop-detail p {
+    padding: 0 16px 16px;
     font-size: 14px;
     line-height: 1.7;
     opacity: 0.85;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 12px;
   }
+  .sop-item.open .sop-detail { display: block; }
 
   .empty-msg {
     text-align: center;
@@ -165,15 +178,8 @@
 
 <main>
   <input type="text" class="search-box" id="searchInput" placeholder="SOP 검색..." oninput="render()">
-
   <div class="filter-row" id="filterRow"></div>
-
   <div class="sop-list" id="sopList"></div>
-
-  <div class="sop-detail" id="sopDetail">
-    <h3 id="detailTitle"></h3>
-    <p id="detailBody"></p>
-  </div>
 </main>
 
 <nav>
@@ -199,7 +205,7 @@
   </a>
   <a href="06_Dooly_v1.html">
     <span class="nav-icon">🤖</span>
-    <span>둘리</span>
+    <span>Dooly</span>
   </a>
 </nav>
 
@@ -229,7 +235,7 @@
 
   var CATEGORIES = ['전체', '업무', '예외', '비품', '복테', '오답노트'];
   var activeCategory = '전체';
-  var selectedId = null;
+  var openId = null;
 
   function initFilters() {
     var row = document.getElementById('filterRow');
@@ -241,9 +247,13 @@
 
   function setCategory(cat) {
     activeCategory = cat;
-    selectedId = null;
-    document.getElementById('sopDetail').classList.remove('visible');
+    openId = null;
     initFilters();
+    render();
+  }
+
+  function toggle(id) {
+    openId = openId === id ? null : id;
     render();
   }
 
@@ -262,26 +272,20 @@
     }
 
     container.innerHTML = filtered.map(function(s) {
+      var isOpen = openId === s.id;
       return [
-        '<div class="sop-card' + (selectedId === s.id ? ' selected' : '') + '" onclick="showDetail(' + s.id + ')">',
-        '  <div class="sop-title">' + escHtml(s.title) + '</div>',
-        '  <span class="sop-cat">' + escHtml(s.category) + '</span>',
+        '<div class="sop-item' + (isOpen ? ' open' : '') + '" onclick="toggle(' + s.id + ')">',
+        '  <div class="sop-header">',
+        '    <div class="sop-left">',
+        '      <div class="sop-title">' + escHtml(s.title) + '</div>',
+        '      <span class="sop-cat">' + escHtml(s.category) + '</span>',
+        '    </div>',
+        '    <span class="sop-arrow">▼</span>',
+        '  </div>',
+        '  <div class="sop-detail">' + escHtml(s.body).replace(/\n/g, '<br>') + '</div>',
         '</div>'
       ].join('');
     }).join('');
-  }
-
-  function showDetail(id) {
-    var sop = SOPS.find(function(s) { return s.id === id; });
-    if (!sop) return;
-    selectedId = id;
-
-    document.getElementById('detailTitle').textContent = sop.title;
-    document.getElementById('detailBody').innerHTML = sop.body.replace(/\n/g, '<br>');
-    document.getElementById('sopDetail').classList.add('visible');
-
-    render();
-    document.getElementById('sopDetail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function escHtml(str) {
