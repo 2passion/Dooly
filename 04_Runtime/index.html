@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>King Assistant OS</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0b0f1a;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 430px;
+    margin: 0 auto;
+  }
+
+  header {
+    background: #0b0f1a;
+    border-bottom: 1px solid rgba(77,163,255,0.2);
+    padding: 16px 20px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #4da3ff;
+    letter-spacing: 0.5px;
+  }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px;
+    padding-bottom: 8px;
+  }
+
+  .greeting {
+    font-size: 16px;
+    opacity: 0.6;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    opacity: 0.6;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .status-card {
+    background: #1c2333;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 20px;
+  }
+  .status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .status-label {
+    font-size: 12px;
+    opacity: 0.6;
+  }
+  .status-count {
+    font-size: 28px;
+    font-weight: 700;
+    color: #4da3ff;
+  }
+
+  .quick-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .quick-btn {
+    background: #1c2333;
+    border: none;
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    min-height: 72px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .quick-btn:active {
+    background: #263045;
+  }
+  .quick-btn .icon {
+    font-size: 24px;
+  }
+  .quick-btn .label {
+    font-size: 14px;
+  }
+
+  nav {
+    background: #1c2333;
+    border-top: 1px solid rgba(77,163,255,0.15);
+    display: flex;
+    height: 60px;
+    flex-shrink: 0;
+  }
+  nav a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: rgba(255,255,255,0.45);
+    font-size: 10px;
+    gap: 3px;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.15s;
+  }
+  nav a.active {
+    color: #4da3ff;
+  }
+  nav a .nav-icon {
+    font-size: 20px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>King Assistant OS</h1>
+</header>
+
+<main>
+  <p class="greeting">안녕하세요, 둘리(Dooly)입니다.</p>
+
+  <p class="section-title">업무 현황</p>
+  <div class="status-card">
+    <div class="status-item">
+      <span class="status-label">진행중</span>
+      <span class="status-count" id="count-progress">0</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">대기중</span>
+      <span class="status-count" id="count-pending">0</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">완료</span>
+      <span class="status-count" id="count-done">0</span>
+    </div>
+  </div>
+
+  <p class="section-title">빠른 실행</p>
+  <div class="quick-grid">
+    <button class="quick-btn" onclick="location.href='02_Task_v1.html'">
+      <span class="icon">📋</span>
+      <span class="label">업무 보기</span>
+    </button>
+    <button class="quick-btn" onclick="location.href='02_Task_v1.html'">
+      <span class="icon">✏️</span>
+      <span class="label">업무 보고</span>
+    </button>
+    <button class="quick-btn" onclick="location.href='03_SOP_v1.html'">
+      <span class="icon">📖</span>
+      <span class="label">SOP 검색</span>
+    </button>
+    <button class="quick-btn" onclick="location.href='04_FAQ_v1.html'">
+      <span class="icon">❓</span>
+      <span class="label">FAQ 검색</span>
+    </button>
+    <button class="quick-btn" onclick="location.href='05_Notice_v1.html'">
+      <span class="icon">📢</span>
+      <span class="label">공지사항</span>
+    </button>
+    <button class="quick-btn" onclick="location.href='06_Dooly_v1.html'">
+      <span class="icon">🤖</span>
+      <span class="label">둘리 질문</span>
+    </button>
+  </div>
+</main>
+
+<nav>
+  <a href="index.html" class="active">
+    <span class="nav-icon">🏠</span>
+    <span>홈</span>
+  </a>
+  <a href="02_Task_v1.html">
+    <span class="nav-icon">📋</span>
+    <span>업무</span>
+  </a>
+  <a href="03_SOP_v1.html">
+    <span class="nav-icon">📖</span>
+    <span>SOP</span>
+  </a>
+  <a href="04_FAQ_v1.html">
+    <span class="nav-icon">❓</span>
+    <span>FAQ</span>
+  </a>
+  <a href="05_Notice_v1.html">
+    <span class="nav-icon">📢</span>
+    <span>공지</span>
+  </a>
+  <a href="06_Dooly_v1.html">
+    <span class="nav-icon">🤖</span>
+    <span>둘리</span>
+  </a>
+</nav>
+
+<script>
+  (function() {
+    var tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    var progress = tasks.filter(function(t) { return t.status === 'in_progress' || t.status === 'review'; }).length;
+    var pending  = tasks.filter(function(t) { return t.status === 'pending'; }).length;
+    var done     = tasks.filter(function(t) { return t.status === 'completed'; }).length;
+    document.getElementById('count-progress').textContent = progress;
+    document.getElementById('count-pending').textContent  = pending;
+    document.getElementById('count-done').textContent     = done;
+  })();
+</script>
+
+</body>
+</html>

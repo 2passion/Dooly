@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SOP</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0b0f1a;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 430px;
+    margin: 0 auto;
+  }
+
+  header {
+    background: #0b0f1a;
+    border-bottom: 1px solid rgba(77,163,255,0.2);
+    padding: 16px 20px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { font-size: 18px; font-weight: 700; }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    padding-bottom: 8px;
+  }
+
+  .search-box {
+    background: #1c2333;
+    border: 1px solid rgba(77,163,255,0.3);
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 15px;
+    padding: 12px 16px;
+    width: 100%;
+    outline: none;
+    margin-bottom: 12px;
+  }
+  .search-box::placeholder { opacity: 0.4; }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 16px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+
+  .filter-chip {
+    background: #1c2333;
+    border: 1px solid rgba(77,163,255,0.2);
+    border-radius: 20px;
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+    padding: 6px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s;
+  }
+  .filter-chip.active {
+    background: #4da3ff;
+    border-color: #4da3ff;
+    color: #0b0f1a;
+    font-weight: 700;
+  }
+
+  .sop-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .sop-card {
+    background: #1c2333;
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s;
+  }
+  .sop-card:active { background: #263045; }
+  .sop-card.selected { border: 1px solid rgba(77,163,255,0.5); }
+
+  .sop-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .sop-cat {
+    display: inline-block;
+    background: rgba(77,163,255,0.15);
+    color: #4da3ff;
+    border-radius: 6px;
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+
+  .sop-detail {
+    background: #1c2333;
+    border: 1px solid rgba(77,163,255,0.3);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 12px;
+    display: none;
+  }
+  .sop-detail.visible { display: block; }
+  .sop-detail h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #4da3ff;
+  }
+  .sop-detail p {
+    font-size: 14px;
+    line-height: 1.7;
+    opacity: 0.85;
+  }
+
+  .empty-msg {
+    text-align: center;
+    opacity: 0.4;
+    margin-top: 48px;
+    font-size: 15px;
+  }
+
+  nav {
+    background: #1c2333;
+    border-top: 1px solid rgba(77,163,255,0.15);
+    display: flex;
+    height: 60px;
+    flex-shrink: 0;
+  }
+  nav a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: rgba(255,255,255,0.45);
+    font-size: 10px;
+    gap: 3px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  nav a.active { color: #4da3ff; }
+  nav a .nav-icon { font-size: 20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SOP</h1>
+</header>
+
+<main>
+  <input type="text" class="search-box" id="searchInput" placeholder="SOP 검색..." oninput="render()">
+
+  <div class="filter-row" id="filterRow"></div>
+
+  <div class="sop-list" id="sopList"></div>
+
+  <div class="sop-detail" id="sopDetail">
+    <h3 id="detailTitle"></h3>
+    <p id="detailBody"></p>
+  </div>
+</main>
+
+<nav>
+  <a href="index.html">
+    <span class="nav-icon">🏠</span>
+    <span>홈</span>
+  </a>
+  <a href="02_Task_v1.html">
+    <span class="nav-icon">📋</span>
+    <span>업무</span>
+  </a>
+  <a href="03_SOP_v1.html" class="active">
+    <span class="nav-icon">📖</span>
+    <span>SOP</span>
+  </a>
+  <a href="04_FAQ_v1.html">
+    <span class="nav-icon">❓</span>
+    <span>FAQ</span>
+  </a>
+  <a href="05_Notice_v1.html">
+    <span class="nav-icon">📢</span>
+    <span>공지</span>
+  </a>
+  <a href="06_Dooly_v1.html">
+    <span class="nav-icon">🤖</span>
+    <span>둘리</span>
+  </a>
+</nav>
+
+<script>
+  var SOPS = [
+    {
+      id: 1, title: '복테 관리 SOP', category: '복테',
+      body: '1. 복테 박스를 매일 오전 확인한다.\n2. 학생별 복테 기록을 정리한다.\n3. 미완료 복테는 담당 조교에게 알린다.\n4. 복테 현황을 원장에게 보고한다.'
+    },
+    {
+      id: 2, title: '오답노트 관리 SOP', category: '오답노트',
+      body: '1. 학생의 오답노트 제출 여부를 확인한다.\n2. 오답노트 작성 완료 시 확인 도장을 찍는다.\n3. 미제출 학생은 명단을 작성하여 원장에게 보고한다.\n4. 오답 기록 내용은 수정 불가.\n5. "끝" 표시가 있는 경우 다음 오답노트를 배부한다.'
+    },
+    {
+      id: 3, title: '비품 관리 SOP', category: '비품',
+      body: '1. 비품 재고를 주 1회 점검한다.\n2. 재고 부족 시 원장에게 즉시 보고한다.\n3. 비품 신청서 작성 후 원장 승인을 받는다.\n4. 수령 후 재고 목록을 업데이트한다.'
+    },
+    {
+      id: 4, title: '연습장 관리 SOP', category: '비품',
+      body: '1. 연습장 재고를 매주 월요일 확인한다.\n2. 잔여 수량이 10권 미만이면 원장에게 보고한다.\n3. 학생에게 연습장 배부 시 이름을 확인한다.\n4. 연습장 배부 기록을 명단에 표시한다.'
+    },
+    {
+      id: 5, title: '복사기 관리 SOP', category: '업무',
+      body: '1. 복사기 용지를 매일 아침 확인한다.\n2. 용지 부족 시 즉시 보충한다.\n3. 복사기 오류 발생 시 오류 코드를 확인한다.\n4. 오류 해결 불가 시 원장에게 즉시 보고한다.\n5. 정기 점검은 월 1회 실시한다.'
+    }
+  ];
+
+  var CATEGORIES = ['전체', '업무', '예외', '비품', '복테', '오답노트'];
+  var activeCategory = '전체';
+  var selectedId = null;
+
+  function initFilters() {
+    var row = document.getElementById('filterRow');
+    row.innerHTML = CATEGORIES.map(function(c) {
+      return '<button class="filter-chip' + (c === activeCategory ? ' active' : '') +
+             '" onclick="setCategory(\'' + c + '\')">' + c + '</button>';
+    }).join('');
+  }
+
+  function setCategory(cat) {
+    activeCategory = cat;
+    selectedId = null;
+    document.getElementById('sopDetail').classList.remove('visible');
+    initFilters();
+    render();
+  }
+
+  function render() {
+    var keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+    var filtered = SOPS.filter(function(s) {
+      var matchCat = activeCategory === '전체' || s.category === activeCategory;
+      var matchKey = !keyword || s.title.toLowerCase().includes(keyword) || s.category.toLowerCase().includes(keyword);
+      return matchCat && matchKey;
+    });
+
+    var container = document.getElementById('sopList');
+    if (filtered.length === 0) {
+      container.innerHTML = '<p class="empty-msg">검색 결과가 없습니다.</p>';
+      return;
+    }
+
+    container.innerHTML = filtered.map(function(s) {
+      return [
+        '<div class="sop-card' + (selectedId === s.id ? ' selected' : '') + '" onclick="showDetail(' + s.id + ')">',
+        '  <div class="sop-title">' + escHtml(s.title) + '</div>',
+        '  <span class="sop-cat">' + escHtml(s.category) + '</span>',
+        '</div>'
+      ].join('');
+    }).join('');
+  }
+
+  function showDetail(id) {
+    var sop = SOPS.find(function(s) { return s.id === id; });
+    if (!sop) return;
+    selectedId = id;
+
+    document.getElementById('detailTitle').textContent = sop.title;
+    document.getElementById('detailBody').innerHTML = sop.body.replace(/\n/g, '<br>');
+    document.getElementById('sopDetail').classList.add('visible');
+
+    render();
+    document.getElementById('sopDetail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  initFilters();
+  render();
+</script>
+
+</body>
+</html>

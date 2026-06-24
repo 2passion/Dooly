@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FAQ</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0b0f1a;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 430px;
+    margin: 0 auto;
+  }
+
+  header {
+    background: #0b0f1a;
+    border-bottom: 1px solid rgba(77,163,255,0.2);
+    padding: 16px 20px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { font-size: 18px; font-weight: 700; }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    padding-bottom: 8px;
+  }
+
+  .search-box {
+    background: #1c2333;
+    border: 1px solid rgba(77,163,255,0.3);
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 15px;
+    padding: 12px 16px;
+    width: 100%;
+    outline: none;
+    margin-bottom: 16px;
+  }
+  .search-box::placeholder { opacity: 0.4; }
+
+  .faq-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .faq-item {
+    background: #1c2333;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s;
+  }
+
+  .faq-question {
+    padding: 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .faq-q-text {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    flex: 1;
+  }
+  .faq-q-text::before {
+    content: 'Q. ';
+    color: #4da3ff;
+  }
+
+  .faq-arrow {
+    font-size: 14px;
+    opacity: 0.5;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: transform 0.2s;
+  }
+  .faq-item.open .faq-arrow { transform: rotate(180deg); }
+
+  .faq-answer {
+    display: none;
+    padding: 0 16px 16px;
+    font-size: 14px;
+    line-height: 1.7;
+    opacity: 0.85;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 12px;
+  }
+  .faq-answer::before {
+    content: 'A. ';
+    color: #4da3ff;
+    font-weight: 700;
+  }
+  .faq-item.open .faq-answer { display: block; }
+
+  .empty-msg {
+    text-align: center;
+    opacity: 0.4;
+    margin-top: 48px;
+    font-size: 15px;
+  }
+
+  nav {
+    background: #1c2333;
+    border-top: 1px solid rgba(77,163,255,0.15);
+    display: flex;
+    height: 60px;
+    flex-shrink: 0;
+  }
+  nav a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: rgba(255,255,255,0.45);
+    font-size: 10px;
+    gap: 3px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  nav a.active { color: #4da3ff; }
+  nav a .nav-icon { font-size: 20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>FAQ</h1>
+</header>
+
+<main>
+  <input type="text" class="search-box" id="searchInput" placeholder="FAQ 검색..." oninput="render()">
+  <div class="faq-list" id="faqList"></div>
+</main>
+
+<nav>
+  <a href="index.html">
+    <span class="nav-icon">🏠</span>
+    <span>홈</span>
+  </a>
+  <a href="02_Task_v1.html">
+    <span class="nav-icon">📋</span>
+    <span>업무</span>
+  </a>
+  <a href="03_SOP_v1.html">
+    <span class="nav-icon">📖</span>
+    <span>SOP</span>
+  </a>
+  <a href="04_FAQ_v1.html" class="active">
+    <span class="nav-icon">❓</span>
+    <span>FAQ</span>
+  </a>
+  <a href="05_Notice_v1.html">
+    <span class="nav-icon">📢</span>
+    <span>공지</span>
+  </a>
+  <a href="06_Dooly_v1.html">
+    <span class="nav-icon">🤖</span>
+    <span>둘리</span>
+  </a>
+</nav>
+
+<script>
+  var FAQS = [
+    {
+      id: 1,
+      question: '복사기가 종이를 먹었어요',
+      answer: '확인이 필요합니다. 담당자에게 문의하세요. 복사기 관리 SOP를 먼저 확인해 주세요.'
+    },
+    {
+      id: 2,
+      question: '학생이 복테를 못 찾겠어요',
+      answer: '확인이 필요합니다. 담당자에게 문의하세요. 복테 관리 SOP를 확인하고 학생의 복테 박스를 함께 확인해 주세요.'
+    },
+    {
+      id: 3,
+      question: '오답기록표에 끝이라고 적혀있어요',
+      answer: '확인이 필요합니다. 담당자에게 문의하세요. 오답노트 관리 SOP에 따라 새 오답노트를 배부해 주세요.'
+    },
+    {
+      id: 4,
+      question: '연습장이 부족해요',
+      answer: '확인이 필요합니다. 담당자에게 문의하세요. 연습장 관리 SOP에 따라 재고를 확인하고 원장에게 보고해 주세요.'
+    }
+  ];
+
+  var openId = null;
+
+  function toggle(id) {
+    openId = openId === id ? null : id;
+    render();
+  }
+
+  function render() {
+    var keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+    var filtered = FAQS.filter(function(f) {
+      return !keyword || f.question.toLowerCase().includes(keyword) || f.answer.toLowerCase().includes(keyword);
+    });
+
+    var container = document.getElementById('faqList');
+    if (filtered.length === 0) {
+      container.innerHTML = '<p class="empty-msg">검색 결과가 없습니다.</p>';
+      return;
+    }
+
+    container.innerHTML = filtered.map(function(f) {
+      var isOpen = openId === f.id;
+      return [
+        '<div class="faq-item' + (isOpen ? ' open' : '') + '" onclick="toggle(' + f.id + ')">',
+        '  <div class="faq-question">',
+        '    <span class="faq-q-text">' + escHtml(f.question) + '</span>',
+        '    <span class="faq-arrow">▼</span>',
+        '  </div>',
+        '  <div class="faq-answer">' + escHtml(f.answer) + '</div>',
+        '</div>'
+      ].join('');
+    }).join('');
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  render();
+</script>
+
+</body>
+</html>
