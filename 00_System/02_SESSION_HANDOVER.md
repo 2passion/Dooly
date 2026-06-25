@@ -117,3 +117,40 @@ C:\Obsidian\Dooly\04_Runtime\
 - 관련 파일: 07_Settings_v1.html DB 폴더 경로 섹션
 
 PROJECT_MASTER.md
+
+---
+
+## 05_RAG 구조 (신규)
+
+C:\Obsidian\Dooly\05_RAG\
+├── docs\
+│   ├── sop_data.txt     ← SOP 22개 텍스트
+│   └── faq_data.txt     ← FAQ 22개 텍스트
+├── db\                  ← Chroma 벡터DB 저장 위치
+├── embed.py             ← 문서 임베딩 스크립트
+├── server.py            ← FastAPI RAG 서버
+└── start.bat            ← 서버 실행 배치 파일
+
+## RAG 서버 실행 방법
+
+1. 최초 1회 임베딩:
+   cd C:\Obsidian\Dooly\05_RAG
+   python embed.py
+
+2. 서버 실행:
+   start.bat 더블클릭
+   또는
+   python -m uvicorn server:app --host 0.0.0.0 --port 8000
+
+3. 브라우저에서 확인:
+   http://localhost:8000
+
+4. Dooly 챗봇에서 사용:
+   04_Runtime\index.html → Dooly 탭
+
+## 설치 완료 목록
+
+- Python 3.13.9 ✅
+- Ollama 0.30.10 ✅
+- qwen2.5:7b 모델 ✅
+- fastapi, uvicorn, chromadb, sentence-transformers, ollama, PyPDF2 ✅

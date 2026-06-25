@@ -262,6 +262,19 @@
     return '확인이 필요합니다. SOP 또는 FAQ를 검색해보세요.';
   }
 
+  function addMsgWithId(who, text, id) {
+    var area = document.getElementById('chatArea');
+    var div = document.createElement('div');
+    div.className = 'msg ' + who;
+    div.id = id;
+    div.innerHTML = [
+      '<div class="msg-sender">' + (who === 'dooly' ? 'Dooly' : '나') + '</div>',
+      '<div class="msg-bubble">' + escHtml(text) + '</div>'
+    ].join('');
+    area.appendChild(div);
+    area.scrollTop = area.scrollHeight;
+  }
+
   function addMsg(who, text) {
     var area = document.getElementById('chatArea');
     var div = document.createElement('div');
@@ -274,6 +287,8 @@
     area.scrollTop = area.scrollHeight;
   }
 
+  var RAG_SERVER = 'http://localhost:8000';
+
   function sendMessage() {
     var input = document.getElementById('chatInput');
     var text = input.value.trim();
@@ -283,10 +298,30 @@
     input.value = '';
     input.style.height = '';
 
-    var response = mockResponse(text);
-    setTimeout(function() {
-      addMsg('dooly', response);
-    }, 300);
+    // 로딩 메시지 표시
+    var loadingId = 'loading_' + Date.now();
+    addMsgWithId('dooly', '답변을 생성 중입니다...', loadingId);
+
+    // FastAPI 서버 호출
+    fetch(RAG_SERVER + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      var loadingEl = document.getElementById(loadingId);
+      if (loadingEl) {
+        loadingEl.querySelector('.msg-bubble').textContent = data.answer;
+      }
+    })
+    .catch(function(err) {
+      var loadingEl = document.getElementById(loadingId);
+      if (loadingEl) {
+        loadingEl.querySelector('.msg-bubble').textContent =
+          'RAG 서버에 연결할 수 없습니다.\nC:\\Obsidian\\Dooly\\05_RAG\\start.bat 을 실행해주세요.';
+      }
+    });
   }
 
   function handleKey(e) {
