@@ -60,7 +60,7 @@
     background: #1c2333;
     border-radius: 12px;
     padding: 16px 20px 12px;
-    margin-bottom: 28px;
+    margin-bottom: 20px;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition: background 0.15s;
@@ -80,6 +80,77 @@
   .status-label { font-size: 12px; opacity: 0.6; }
   .status-count { font-size: 28px; font-weight: 700; color: #4da3ff; }
   .status-hint  { font-size: 11px; opacity: 0.4; }
+
+  /* 달력 */
+  .calendar-wrap { background: #1c2333; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-title { font-size: 15px; font-weight: 700; }
+  .cal-nav { background: transparent; border: none; color: #4da3ff; font-size: 18px; cursor: pointer; padding: 4px 8px; }
+  .cal-view-toggle { display: flex; gap: 6px; }
+  .cal-view-btn { background: #0b0f1a; border: 1px solid rgba(77,163,255,0.2); color: rgba(255,255,255,0.5); border-radius: 12px; font-size: 11px; padding: 3px 10px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .cal-view-btn.active { background: #4da3ff; border-color: #4da3ff; color: #0b0f1a; font-weight: 700; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-day-header { text-align: center; font-size: 11px; opacity: 0.5; padding: 4px 0; }
+  .cal-day-header:first-child { color: #ff6b6b; opacity: 0.8; }
+  .cal-day-header:last-child  { color: #4da3ff; opacity: 0.8; }
+  .cal-day {
+    text-align: center;
+    padding: 4px 2px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    position: relative;
+    min-height: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cal-day:active { background: #263045; }
+  .cal-day.today {
+    background: #4da3ff;
+    color: #0b0f1a;
+    font-weight: 700;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    margin: 0 auto;
+  }
+  .cal-day.selected { background: rgba(77,163,255,0.2); border-radius: 8px; }
+  .cal-day.today.selected { background: #4da3ff; border-radius: 50%; }
+  .cal-dot { width: 4px; height: 4px; border-radius: 50%; background: #4da3ff; }
+  .cal-day.today .cal-dot { background: rgba(255,255,255,0.6); }
+
+  /* 날짜별 업무 목록 */
+  .date-tasks { background: #1c2333; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .date-tasks-title { font-size: 13px; font-weight: 700; color: #4da3ff; margin-bottom: 12px; }
+  .assignee-group { margin-bottom: 8px; }
+  .assignee-group-header {
+    background: #0b0f1a;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 600;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .assignee-group-body { display: none; padding: 8px 0 0 12px; }
+  .assignee-group.open .assignee-group-body { display: block; }
+  .assignee-task-item {
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .assignee-task-item:last-child { border-bottom: none; }
+  .no-task-msg { font-size: 13px; opacity: 0.4; text-align: center; padding: 12px 0; }
 
   /* 공지 아코디언 */
   .notice-item {
@@ -134,13 +205,13 @@
     justify-content: center;
     text-decoration: none;
     color: rgba(255,255,255,0.45);
-    font-size: 10px;
+    font-size: 9px;
     gap: 3px;
     -webkit-tap-highlight-color: transparent;
     transition: color 0.15s;
   }
   nav a.active { color: #4da3ff; }
-  nav a .nav-icon { font-size: 20px; }
+  nav a .nav-icon { font-size: 18px; }
 </style>
 </head>
 <body>
@@ -170,6 +241,20 @@
     </div>
     <div class="status-hint">탭하여 업무 관리로 이동</div>
   </div>
+
+  <div class="calendar-wrap">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="prevMonth()">◀</button>
+      <span class="cal-title" id="calTitle"></span>
+      <button class="cal-nav" onclick="nextMonth()">▶</button>
+      <div class="cal-view-toggle">
+        <button class="cal-view-btn active" id="btnMonth" onclick="setCalView('month')">월간</button>
+        <button class="cal-view-btn" id="btnWeek" onclick="setCalView('week')">주간</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+  <div id="dateTasks"></div>
 
   <div class="section-block">
     <p class="section-title">공지사항</p>
@@ -202,9 +287,14 @@
     <span class="nav-icon">🤖</span>
     <span>Dooly</span>
   </a>
+  <a href="07_Settings_v1.html">
+    <span class="nav-icon">⚙️</span>
+    <span>설정</span>
+  </a>
 </nav>
 
 <script>
+  /* ── 공지 데이터 ── */
   var NOTICES = [
     {
       id: 1,
@@ -227,6 +317,7 @@
     render();
   }
 
+  /* ── 홈 렌더 (업무 카운트 + 공지) ── */
   function render() {
     var tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
     document.getElementById('count-pending').textContent  = tasks.filter(function(t) { return t.status === 'pending'; }).length;
@@ -253,11 +344,149 @@
     }).join('');
   }
 
+  /* ── 달력 ── */
+  var todayObj = new Date();
+  var calYear  = todayObj.getFullYear();
+  var calMonth = todayObj.getMonth();
+  var calView  = 'month';
+  var selectedDate = null;
+
+  function formatDate(y, m, d) {
+    return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  }
+  function formatDisplayDate(dateStr) {
+    var p = dateStr.split('-');
+    return p[0] + '년 ' + parseInt(p[1]) + '월 ' + parseInt(p[2]) + '일';
+  }
+
+  function prevMonth() {
+    if (calView === 'week') return;
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendar();
+  }
+  function nextMonth() {
+    if (calView === 'week') return;
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendar();
+  }
+  function setCalView(v) {
+    calView = v;
+    document.getElementById('btnMonth').className = 'cal-view-btn' + (v === 'month' ? ' active' : '');
+    document.getElementById('btnWeek').className  = 'cal-view-btn' + (v === 'week'  ? ' active' : '');
+    renderCalendar();
+  }
+  function selectDate(dateStr) {
+    selectedDate = (selectedDate === dateStr) ? null : dateStr;
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    var now = new Date();
+    var todayStr = formatDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
+    var tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    var taskDates = {};
+    tasks.forEach(function(t) { if (t.created_at) taskDates[t.created_at] = true; });
+
+    var DAY_KO = ['일','월','화','수','목','금','토'];
+    var headers = DAY_KO.map(function(d) {
+      return '<div class="cal-day-header">' + d + '</div>';
+    }).join('');
+
+    var cells = [];
+    var title;
+
+    if (calView === 'month') {
+      title = calYear + '년 ' + (calMonth + 1) + '월';
+      var firstDay    = new Date(calYear, calMonth, 1).getDay();
+      var daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+      for (var i = 0; i < firstDay; i++) {
+        cells.push('<div class="cal-day"></div>');
+      }
+      for (var d = 1; d <= daysInMonth; d++) {
+        var ds  = formatDate(calYear, calMonth + 1, d);
+        var cls = 'cal-day';
+        if (ds === todayStr)    cls += ' today';
+        if (ds === selectedDate) cls += ' selected';
+        var dot = (taskDates[ds] && ds !== todayStr) ? '<span class="cal-dot"></span>' : '';
+        cells.push('<div class="' + cls + '" onclick="selectDate(\'' + ds + '\')">' + d + dot + '</div>');
+      }
+    } else {
+      var sun = new Date(now);
+      sun.setDate(now.getDate() - now.getDay());
+      var sat = new Date(sun); sat.setDate(sun.getDate() + 6);
+      title = (sun.getMonth() + 1) + '월 ' + sun.getDate() + '일 ~ ' +
+              (sat.getMonth() + 1) + '월 ' + sat.getDate() + '일';
+
+      for (var i = 0; i < 7; i++) {
+        var day = new Date(sun); day.setDate(sun.getDate() + i);
+        var ds  = formatDate(day.getFullYear(), day.getMonth() + 1, day.getDate());
+        var cls = 'cal-day';
+        if (ds === todayStr)    cls += ' today';
+        if (ds === selectedDate) cls += ' selected';
+        var dot = (taskDates[ds] && ds !== todayStr) ? '<span class="cal-dot"></span>' : '';
+        cells.push('<div class="' + cls + '" onclick="selectDate(\'' + ds + '\')">' + day.getDate() + dot + '</div>');
+      }
+    }
+
+    document.getElementById('calTitle').textContent = title;
+    document.getElementById('calGrid').innerHTML = headers + cells.join('');
+
+    if (selectedDate) renderDateTasks(selectedDate);
+    else document.getElementById('dateTasks').innerHTML = '';
+  }
+
+  function renderDateTasks(dateStr) {
+    var tasks = JSON.parse(localStorage.getItem('tasks') || '[]')
+                  .filter(function(t) { return t.created_at === dateStr; });
+    var container = document.getElementById('dateTasks');
+    var titleHtml = '<div class="date-tasks-title">' + formatDisplayDate(dateStr) + ' 업무</div>';
+
+    if (tasks.length === 0) {
+      container.innerHTML = '<div class="date-tasks">' + titleHtml +
+        '<div class="no-task-msg">이 날의 업무가 없습니다.</div></div>';
+      return;
+    }
+
+    var PCOLOR = { urgent: '#ff4444', today: '#ffcc00', normal: '#3cc864' };
+    var PLABEL = { urgent: '즉시', today: '오늘', normal: '보통' };
+
+    var groups = {}, order = [];
+    tasks.forEach(function(t) {
+      if (!groups[t.assignee]) { groups[t.assignee] = []; order.push(t.assignee); }
+      groups[t.assignee].push(t);
+    });
+
+    var groupsHtml = order.map(function(assignee) {
+      var atasks = groups[assignee];
+      var itemsHtml = atasks.map(function(t) {
+        var p = t.priority || 'normal';
+        return '<div class="assignee-task-item">' +
+          '<span style="color:' + (PCOLOR[p] || PCOLOR.normal) + ';font-weight:700;font-size:12px;">● ' + (PLABEL[p] || p) + '</span>' +
+          '<span>' + escHtml(t.title) + '</span>' +
+          '</div>';
+      }).join('');
+      return '<div class="assignee-group" onclick="this.classList.toggle(\'open\')">' +
+        '<div class="assignee-group-header">' +
+          '<span>' + escHtml(assignee) + ' <span style="opacity:0.5;font-size:12px;">(' + atasks.length + ')</span></span>' +
+          '<span style="font-size:12px;opacity:0.5;transition:transform 0.2s;">▼</span>' +
+        '</div>' +
+        '<div class="assignee-group-body">' + itemsHtml + '</div>' +
+        '</div>';
+    }).join('');
+
+    container.innerHTML = '<div class="date-tasks">' + titleHtml + groupsHtml + '</div>';
+  }
+
   function escHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   render();
+  renderCalendar();
 </script>
 
 </body>

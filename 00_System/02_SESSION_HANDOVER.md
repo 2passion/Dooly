@@ -29,12 +29,13 @@ HTML Prototype Phase (Phase 0)
 * Implementation Plan 작성 완료
 * UI Wireframe v1.0 완료
 * HTML Prototype v1.0 생성 완료 (2026-06-25)
-  - index.html (홈)
+  - index.html (홈 + 달력)
   - 02_Task_v1.html (업무 관리)
   - 03_SOP_v1.html (SOP 검색)
   - 04_FAQ_v1.html (FAQ)
   - 05_Notice_v1.html (공지사항)
   - 06_Dooly_v1.html (둘리 AI 채팅)
+  - 07_Settings_v1.html (설정: 담당자/초기화)
 
 ---
 
@@ -47,7 +48,8 @@ C:\Obsidian\Dooly\04_Runtime\
 ├── 03_SOP_v1.html
 ├── 04_FAQ_v1.html
 ├── 05_Notice_v1.html
-└── 06_Dooly_v1.html
+├── 06_Dooly_v1.html
+└── 07_Settings_v1.html
 ```
 
 ---
@@ -97,5 +99,21 @@ C:\Obsidian\Dooly\04_Runtime\
 # 참고 문서
 
 08_King_Assistant_OS_v1.0_Implementation_Plan.md
+
+---
+
+## PWA 전환 시 추가 구현 항목
+
+### DB 폴더 경로 선택 기능
+- File System Access API 사용
+- 구현 방법:
+  ```javascript
+  const dirHandle = await window.showDirectoryPicker();
+  localStorage.setItem('dbDirHandle', JSON.stringify(dirHandle));
+  ```
+- 폴더 선택 → IndexedDB에 FileSystemDirectoryHandle 저장
+- 이후 다운로드/업로드 시 해당 폴더 자동 사용
+- 설정 탭에 "폴더 선택" 버튼 추가 (현재는 안내 텍스트만 표시)
+- 관련 파일: 07_Settings_v1.html DB 폴더 경로 섹션
 
 PROJECT_MASTER.md
