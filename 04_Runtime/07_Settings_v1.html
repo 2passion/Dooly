@@ -51,21 +51,79 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 0;
+    padding: 0;
     border-bottom: 1px solid rgba(255,255,255,0.06);
+    cursor: pointer;
+    flex-direction: column;
+    gap: 0;
   }
   .assignee-item:last-child { border-bottom: none; }
   .assignee-name { font-size: 15px; }
-  .delete-btn {
+  .assignee-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px 0;
+  }
+  .assignee-item-body {
+    display: none;
+    padding: 8px 0 12px 0;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    width: 100%;
+  }
+  .assignee-item.open .assignee-item-body { display: block; }
+  .edit-name-input {
+    width: 100%;
+    background: #0b0f1a;
+    border: 1px solid rgba(77,163,255,0.3);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    padding: 8px 12px;
+    outline: none;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+  }
+  .edit-memo-input {
+    width: 100%;
+    background: #0b0f1a;
+    border: 1px solid rgba(77,163,255,0.3);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    padding: 8px 12px;
+    outline: none;
+    resize: none;
+    height: 100px;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .edit-action-row { display: flex; gap: 8px; }
+  .btn-save-assignee {
+    flex: 1;
+    background: #4da3ff;
+    color: #0b0f1a;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px;
+    cursor: pointer;
+    min-height: 36px;
+  }
+  .btn-delete-assignee {
     background: rgba(255,80,80,0.12);
     border: 1px solid rgba(255,80,80,0.25);
     color: #ff5050;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 13px;
-    padding: 4px 12px;
+    padding: 8px 16px;
     cursor: pointer;
-    min-height: 32px;
-    -webkit-tap-highlight-color: transparent;
+    min-height: 36px;
   }
 
   .add-row { display: flex; gap: 10px; margin-top: 14px; }
@@ -240,23 +298,51 @@
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
-  function loadAssignees() { return JSON.parse(localStorage.getItem('assignees') || '[]'); }
+  function loadAssignees() {
+    var raw = JSON.parse(localStorage.getItem('assignees') || '[]');
+    return raw.map(function(a) {
+      if (typeof a === 'string') return { name: a, memo: '' };
+      return a;
+    });
+  }
   function saveAssignees(list) { localStorage.setItem('assignees', JSON.stringify(list)); }
 
   function addAssignee() {
     var name = document.getElementById('inputAssigneeName').value.trim();
     if (!name) { alert('이름을 입력해 주세요.'); return; }
     var list = loadAssignees();
-    if (list.includes(name)) { alert('이미 등록된 담당자입니다.'); return; }
-    list.push(name);
+    if (list.some(function(a) { return a.name === name; })) {
+      alert('이미 등록된 담당자입니다.'); return;
+    }
+    list.push({ name: name, memo: '' });
     saveAssignees(list);
     document.getElementById('inputAssigneeName').value = '';
     renderAssignees();
   }
 
-  function deleteAssignee(name) {
-    if (!confirm(name + '을(를) 삭제하시겠습니까?')) return;
-    saveAssignees(loadAssignees().filter(function(a) { return a !== name; }));
+  function toggleAssigneeEdit(index) {
+    var item = document.getElementById('aitem_' + index);
+    if (item) item.classList.toggle('open');
+  }
+
+  function saveAssigneeEdit(index) {
+    var name = document.getElementById('editName_' + index).value.trim();
+    var memo = document.getElementById('editMemo_' + index).value;
+    if (!name) { alert('이름을 입력해 주세요.'); return; }
+    var list = loadAssignees();
+    if (index >= 0 && index < list.length) {
+      list[index].name = name;
+      list[index].memo = memo;
+      saveAssignees(list);
+      renderAssignees();
+    }
+  }
+
+  function deleteAssignee(index) {
+    var list = loadAssignees();
+    if (!confirm(list[index].name + '을(를) 삭제하시겠습니까?')) return;
+    list.splice(index, 1);
+    saveAssignees(list);
     renderAssignees();
   }
 
@@ -267,11 +353,23 @@
       el.innerHTML = '<p class="empty-msg">등록된 담당자가 없습니다.</p>';
       return;
     }
-    el.innerHTML = list.map(function(a) {
-      return '<div class="assignee-item">' +
-        '<span class="assignee-name">' + escHtml(a) + '</span>' +
-        '<button class="delete-btn" onclick="deleteAssignee(\'' + escAttr(a) + '\')">삭제</button>' +
-        '</div>';
+    el.innerHTML = list.map(function(a, i) {
+      return [
+        '<div class="assignee-item" id="aitem_' + i + '">',
+        '  <div class="assignee-item-header" onclick="toggleAssigneeEdit(' + i + ')">',
+        '    <span class="assignee-name">' + escHtml(a.name) + '</span>',
+        '    <span style="font-size:12px;opacity:0.4;">✏️ 클릭하여 수정</span>',
+        '  </div>',
+        '  <div class="assignee-item-body">',
+        '    <input type="text" class="edit-name-input" id="editName_' + i + '" value="' + escAttr(a.name) + '" placeholder="이름 변경" onclick="event.stopPropagation()">',
+        '    <textarea class="edit-memo-input" id="editMemo_' + i + '" placeholder="메모 (5줄)" onclick="event.stopPropagation()">' + escHtml(a.memo || '') + '</textarea>',
+        '    <div class="edit-action-row">',
+        '      <button class="btn-save-assignee" onclick="event.stopPropagation();saveAssigneeEdit(' + i + ')">저장</button>',
+        '      <button class="btn-delete-assignee" onclick="event.stopPropagation();deleteAssignee(' + i + ')">삭제</button>',
+        '    </div>',
+        '  </div>',
+        '</div>'
+      ].join('');
     }).join('');
   }
 

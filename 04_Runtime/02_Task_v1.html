@@ -201,19 +201,6 @@
     line-height: 1.3;
     flex: 1;
   }
-  .task-title.checked {
-    text-decoration: line-through;
-    opacity: 0.5;
-  }
-
-  .task-check {
-    width: 18px;
-    height: 18px;
-    accent-color: #4da3ff;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
   .signal {
     display: flex;
     align-items: center;
@@ -228,7 +215,6 @@
     opacity: 0.65;
     line-height: 1.5;
     margin-bottom: 8px;
-    padding-left: 30px;
     word-break: break-all;
   }
 
@@ -334,6 +320,10 @@
     <div class="filter-label">우선순위</div>
     <div class="filter-row" id="priorityFilter"></div>
   </div>
+  <div class="filter-section" style="margin-bottom:8px;">
+    <div class="filter-label">업무진행상황</div>
+    <div class="filter-row" id="statusFilter"></div>
+  </div>
   <div class="filter-section" style="margin-bottom:12px;">
     <div class="filter-label">담당자</div>
     <div class="filter-row" id="assigneeFilter"></div>
@@ -410,6 +400,7 @@
 
   var activePriority = '전체';
   var activeAssignee = '전체';
+  var activeStatus = '전체';
   var editingId = null;
 
   /* ── 데이터 로드/저장 ── */
@@ -417,11 +408,19 @@
   function saveTasks(t)    { localStorage.setItem('tasks',     JSON.stringify(t)); }
   function loadAssignees() { return JSON.parse(localStorage.getItem('assignees') || '[]'); }
   function saveAssignees(l){ localStorage.setItem('assignees', JSON.stringify(l)); }
+  function loadAssigneeNames() {
+    var raw = JSON.parse(localStorage.getItem('assignees') || '[]');
+    return raw.map(function(a) { return typeof a === 'string' ? a : a.name; });
+  }
 
   function addAssigneeIfNew(name) {
     if (!name || name === '미지정') return;
-    var list = loadAssignees();
-    if (list.indexOf(name) === -1) { list.push(name); saveAssignees(list); }
+    var raw = JSON.parse(localStorage.getItem('assignees') || '[]');
+    var names = raw.map(function(a) { return typeof a === 'string' ? a : a.name; });
+    if (names.indexOf(name) === -1) {
+      raw.push({ name: name, memo: '' });
+      localStorage.setItem('assignees', JSON.stringify(raw));
+    }
   }
 
   function genId() { return 'T' + Date.now(); }
@@ -454,7 +453,7 @@
   function renderAssigneeChips(containerId, inputId) {
     var el = document.getElementById(containerId);
     if (!el) return;
-    var assignees = loadAssignees();
+    var assignees = loadAssigneeNames();
     if (assignees.length === 0) { el.innerHTML = ''; return; }
     el.innerHTML = assignees.map(function(a) {
       return '<button type="button" class="assignee-chip" onclick="event.stopPropagation();document.getElementById(\'' + inputId + '\').value=\'' + escAttr(a) + '\'">' + escHtml(a) + '</button>';
@@ -469,7 +468,13 @@
              '" onclick="setPriorityFilter(\'' + p + '\')">' + p + '</button>';
     }).join('');
 
-    var assignees = ['전체'].concat(loadAssignees());
+    var statuses = ['전체', '대기', '진행중', '완료'];
+    document.getElementById('statusFilter').innerHTML = statuses.map(function(s) {
+      return '<button class="filter-chip' + (s === activeStatus ? ' active' : '') +
+             '" onclick="setStatusFilter(\'' + s + '\')">' + s + '</button>';
+    }).join('');
+
+    var assignees = ['전체'].concat(loadAssigneeNames());
     document.getElementById('assigneeFilter').innerHTML = assignees.map(function(a) {
       return '<button class="filter-chip' + (a === activeAssignee ? ' active' : '') +
              '" onclick="setAssigneeFilter(\'' + escAttr(a) + '\')">' + escHtml(a) + '</button>';
@@ -477,6 +482,7 @@
   }
 
   function setPriorityFilter(p) { activePriority = p; renderFilters(); renderTasks(); }
+  function setStatusFilter(s) { activeStatus = s; renderFilters(); renderTasks(); }
   function setAssigneeFilter(a) { activeAssignee = a; renderFilters(); renderTasks(); }
 
   /* ── 폼 토글 ── */
@@ -506,7 +512,6 @@
       content: content,
       status: 'pending',
       priority: priority,
-      checked: false,
       created_at: getToday()
     });
     saveTasks(tasks);
@@ -529,16 +534,6 @@
         var idx = STATUS_CYCLE.indexOf(t.status);
         t.status = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
       }
-      return t;
-    });
-    saveTasks(tasks);
-    renderTasks();
-  }
-
-  /* ── 체크박스 토글 ── */
-  function toggleCheck(id) {
-    var tasks = loadTasks().map(function(t) {
-      if (t.id === id) t.checked = !t.checked;
       return t;
     });
     saveTasks(tasks);
@@ -593,7 +588,7 @@
 
   /* ── 수정 폼 HTML 생성 ── */
   function renderEditForm(t) {
-    var assignees = loadAssignees();
+    var assignees = loadAssigneeNames();
     var chipsHtml = assignees.map(function(a) {
       return '<button type="button" class="assignee-chip" onclick="event.stopPropagation();document.getElementById(\'editAssignee_' + t.id + '\').value=\'' + escAttr(a) + '\'">' + escHtml(a) + '</button>';
     }).join('');
@@ -634,10 +629,12 @@
     var tasks = loadTasks();
     var container = document.getElementById('taskList');
 
+    var STATUS_MAP = { '대기': 'pending', '진행중': 'in_progress', '완료': 'completed' };
     var filtered = tasks.filter(function(t) {
       var matchP = activePriority === '전체' || t.priority === PRIORITY_MAP[activePriority];
       var matchA = activeAssignee === '전체' || t.assignee === activeAssignee;
-      return matchP && matchA;
+      var matchS = activeStatus === '전체' || t.status === STATUS_MAP[activeStatus];
+      return matchP && matchA && matchS;
     });
 
     if (filtered.length === 0) {
@@ -658,8 +655,7 @@
         '<div class="task-card" draggable="true" data-id="' + t.id + '" onclick="cycleStatus(\'' + t.id + '\')">',
         '  <div class="task-top">',
         '    <span class="drag-handle" onclick="event.stopPropagation()">&#10783;</span>',
-        '    <input type="checkbox" class="task-check"' + (t.checked ? ' checked' : '') + ' onclick="event.stopPropagation();toggleCheck(\'' + t.id + '\')" data-id="' + t.id + '">',
-        '    <span class="task-title' + (t.checked ? ' checked' : '') + '">' + escHtml(t.title) + '</span>',
+        '    <span class="task-title">' + escHtml(t.title) + '</span>',
         '    ' + signal(t.priority),
         '  </div>',
         contentHtml,
