@@ -187,6 +187,42 @@
   }
   nav a.active { color: #4da3ff; }
   nav a .nav-icon { font-size: 18px; }
+
+  .path-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(77,163,255,0.12);
+    border: 1px solid rgba(77,163,255,0.3);
+    color: #4da3ff;
+    border-radius: 6px;
+    font-size: 12px;
+    padding: 4px 10px;
+    cursor: pointer;
+    margin: 2px 0;
+    word-break: break-all;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .path-copy-btn:active { background: rgba(77,163,255,0.25); }
+
+  .toast-msg {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(77,163,255,0.9);
+    color: #0b0f1a;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 20px;
+    z-index: 999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .toast-msg.show { opacity: 1; }
 </style>
 </head>
 <body>
@@ -405,7 +441,7 @@
         '    </div>',
         '    <span class="sop-arrow">▼</span>',
         '  </div>',
-        '  <div class="sop-detail">' + escHtml(s.body).replace(/\n/g, '<br>') + '</div>',
+        '  <div class="sop-detail">' + linkify(escHtml(s.body).replace(/\n/g, '<br>')) + '</div>',
         '</div>'
       ].join('');
     }).join('');
@@ -456,6 +492,37 @@
 
   function escHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function linkify(str) {
+    str = str.replace(/(https?:\/\/[^\s<>"]+)/g, function(url) {
+      return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="color:#4da3ff;text-decoration:underline;">' + url + '</a>';
+    });
+    str = str.replace(/((?:C:\\|D:\\|E:\\|\\\\)[^\s<>"]+)/g, function(path) {
+      var escaped = path.replace(/'/g, "\\'");
+      return '<button class="path-copy-btn" onclick="copyPath(\'' + escaped + '\')">📋 ' + path + '</button>';
+    });
+    return str;
+  }
+
+  function copyPath(path) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(path).then(function() { showToast(); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = path;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast();
+    }
+  }
+
+  function showToast() {
+    var t = document.getElementById('toastMsg');
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 2000);
   }
 
   function addMouseDrag(container, saveOrder) {
@@ -536,5 +603,6 @@
   addTouchDrag(sopContainer, sopSaveOrder);
 </script>
 
+<div class="toast-msg" id="toastMsg">경로가 복사되었습니다 📋</div>
 </body>
 </html>

@@ -350,6 +350,7 @@
   var calMonth = todayObj.getMonth();
   var calView  = 'month';
   var selectedDate = null;
+  var weekOffset = 0;
 
   function formatDate(y, m, d) {
     return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
@@ -360,19 +361,28 @@
   }
 
   function prevMonth() {
-    if (calView === 'week') return;
+    if (calView === 'week') {
+      weekOffset--;
+      renderCalendar();
+      return;
+    }
     calMonth--;
     if (calMonth < 0) { calMonth = 11; calYear--; }
     renderCalendar();
   }
   function nextMonth() {
-    if (calView === 'week') return;
+    if (calView === 'week') {
+      weekOffset++;
+      renderCalendar();
+      return;
+    }
     calMonth++;
     if (calMonth > 11) { calMonth = 0; calYear++; }
     renderCalendar();
   }
   function setCalView(v) {
     calView = v;
+    weekOffset = 0;
     document.getElementById('btnMonth').className = 'cal-view-btn' + (v === 'month' ? ' active' : '');
     document.getElementById('btnWeek').className  = 'cal-view-btn' + (v === 'week'  ? ' active' : '');
     renderCalendar();
@@ -416,7 +426,7 @@
       }
     } else {
       var sun = new Date(now);
-      sun.setDate(now.getDate() - now.getDay());
+      sun.setDate(now.getDate() - now.getDay() + (weekOffset * 7));
       var sat = new Date(sun); sat.setDate(sun.getDate() + 6);
       title = (sun.getMonth() + 1) + '월 ' + sun.getDate() + '일 ~ ' +
               (sat.getMonth() + 1) + '월 ' + sat.getDate() + '일';
