@@ -188,15 +188,44 @@
 <script>
   function mockResponse(input) {
     var text = input.toLowerCase();
-    if (text.indexOf('복사기') !== -1) {
-      return '복사기 오류 SOP를 확인하세요.';
+
+    if (text.includes('복사기') || text.includes('종이 걸') || text.includes('용지')) {
+      return '복사기/스캔 SOP를 확인하세요.\n구겨진 종이는 ADF 대신 수동(평판) 스캔을 사용하세요.';
     }
-    if (text.indexOf('복테') !== -1) {
-      return '복테 관리 SOP를 확인하세요.';
+    if (text.includes('복테 보관함') || text.includes('보관함')) {
+      return '복테 보관함 운영 SOP를 확인하세요.\nX존(고등): 고3→고2→고1 / Y존(초중): 초등→중3→중2→중1 순서입니다.';
     }
-    if (text.indexOf('연습장') !== -1) {
-      return '연습장 관리 SOP를 확인하세요.';
+    if (text.includes('복테')) {
+      return '복테 관련 SOP를 확인하세요.\n제출함 관리 / 제작 / 보관함 운영 / 처리 및 폐기 SOP가 있습니다.';
     }
+    if (text.includes('오답기록표') || text.includes('끝')) {
+      return '오답기록표에 "끝"이 적혀있으면 오답노트 제본을 진행하세요.\n오답노트 제본 SOP를 확인하세요.';
+    }
+    if (text.includes('오답노트') || text.includes('제본')) {
+      return '오답노트 제본 SOP를 확인하세요.\n20mm 링 사용, 첫 페이지에 만든날짜+오답노트 기입 후 학생에게 전달합니다.';
+    }
+    if (text.includes('연습장')) {
+      return '연습장 보관함은 항상 5권을 유지해야 합니다.\n연습장 관리 SOP를 확인하세요.';
+    }
+    if (text.includes('이면지')) {
+      return '이면지 보관함은 복테 제출함 아래에 있습니다.\n이면지 보관함 SOP를 확인하세요.';
+    }
+    if (text.includes('제본기') || text.includes('링')) {
+      return '제본기 사용 SOP를 확인하세요.\n12mm: 얇은 자료 / 20mm: 두꺼운 자료. 작업 후 찌꺼기함을 반드시 비우세요.';
+    }
+    if (text.includes('비품') || text.includes('재고')) {
+      return '소모품 재고 관리 SOP를 확인하세요.\n재고 20~30% 남았을 때 미리 원장에게 보고해야 합니다.';
+    }
+    if (text.includes('출근')) {
+      return '출근 루틴 SOP를 확인하세요.\n복테 제출함 확인 → 조교할일 확인 → 연습장 보관함 확인 순서로 진행합니다.';
+    }
+    if (text.includes('퇴근')) {
+      return '퇴근 루틴 SOP를 확인하세요.\n퇴근 30분 전 복테 프린트/저장, 퇴근 직전 주변 정리 및 PC 전원 끄기를 진행합니다.';
+    }
+    if (text.includes('인수인계')) {
+      return '인수인계는 3단계로 진행합니다.\n1단계(모델링) → 2단계(코칭) → 3단계(영역별 실무 전수). 종합 가이드북을 참고하세요.';
+    }
+
     return '확인이 필요합니다. SOP 또는 FAQ를 검색해보세요.';
   }
 
