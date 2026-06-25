@@ -105,6 +105,8 @@
     flex: 1;
   }
 
+  .sop-num { color: #4da3ff; font-weight: 700; margin-right: 4px; }
+
   .sop-title {
     font-size: 15px;
     font-weight: 600;
@@ -150,6 +152,19 @@
   .data-btn-row { display: flex; gap: 10px; margin-bottom: 12px; }
   .btn-download { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
   .btn-upload   { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
+
+  .drag-handle {
+    color: rgba(255,255,255,0.2);
+    font-size: 18px;
+    cursor: grab;
+    padding-right: 10px;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .dragging {
+    opacity: 0.4;
+    background: #263045 !important;
+  }
 
   nav {
     background: #1c2333;
@@ -326,13 +341,14 @@
       return;
     }
 
-    container.innerHTML = filtered.map(function(s) {
+    container.innerHTML = filtered.map(function(s, index) {
       var isOpen = openId === s.id;
       return [
-        '<div class="sop-item' + (isOpen ? ' open' : '') + '" onclick="toggle(' + s.id + ')">',
+        '<div class="sop-item' + (isOpen ? ' open' : '') + '" draggable="true" data-id="' + String(s.id) + '" onclick="toggle(' + s.id + ')">',
         '  <div class="sop-header">',
+        '    <span class="drag-handle" onclick="event.stopPropagation()">&#10783;</span>',
         '    <div class="sop-left">',
-        '      <div class="sop-title">' + escHtml(s.title) + '</div>',
+        '      <div class="sop-title"><span class="sop-num">' + (index + 1) + '.</span>' + escHtml(s.title) + '</div>',
         '      <span class="sop-cat">' + escHtml(s.category) + '</span>',
         '    </div>',
         '    <span class="sop-arrow">▼</span>',
@@ -343,8 +359,15 @@
     }).join('');
   }
 
+  function getToday() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+
   function downloadSOPs() {
-    downloadJSON(SOPS, 'sop_template.json');
+    downloadJSON(SOPS, 'sop_' + getToday() + '.json');
   }
 
   function uploadSOPs() {
@@ -383,8 +406,82 @@
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  function addMouseDrag(container, saveOrder) {
+    var dragEl = null;
+    container.addEventListener('dragstart', function(e) {
+      dragEl = e.target.closest('[data-id]');
+      if (dragEl) setTimeout(function() { dragEl.classList.add('dragging'); }, 0);
+    });
+    container.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (!dragEl) return;
+      var after = getDragAfterElement(container, e.clientY);
+      if (after == null) container.appendChild(dragEl);
+      else container.insertBefore(dragEl, after);
+    });
+    container.addEventListener('dragend', function() {
+      if (!dragEl) return;
+      dragEl.classList.remove('dragging');
+      saveOrder(Array.from(container.querySelectorAll('[data-id]'))
+        .map(function(el) { return el.getAttribute('data-id'); }));
+      dragEl = null;
+    });
+  }
+
+  function getDragAfterElement(container, y) {
+    var items = Array.from(container.querySelectorAll('[data-id]:not(.dragging)'));
+    return items.reduce(function(closest, child) {
+      var box = child.getBoundingClientRect();
+      var offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+      return closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  function addTouchDrag(container, saveOrder) {
+    var dragEl = null;
+    container.addEventListener('touchstart', function(e) {
+      var handle = e.target.closest('.drag-handle');
+      if (!handle) return;
+      dragEl = handle.closest('[data-id]');
+      if (dragEl) dragEl.classList.add('dragging');
+      e.preventDefault();
+    }, { passive: false });
+    container.addEventListener('touchmove', function(e) {
+      if (!dragEl) return;
+      e.preventDefault();
+      var y = e.touches[0].clientY;
+      var items = Array.from(container.querySelectorAll('[data-id]:not(.dragging)'));
+      var after = items.find(function(item) {
+        var rect = item.getBoundingClientRect();
+        return y < rect.top + rect.height / 2;
+      });
+      if (after) container.insertBefore(dragEl, after);
+      else container.appendChild(dragEl);
+    }, { passive: false });
+    container.addEventListener('touchend', function() {
+      if (!dragEl) return;
+      dragEl.classList.remove('dragging');
+      saveOrder(Array.from(container.querySelectorAll('[data-id]'))
+        .map(function(el) { return el.getAttribute('data-id'); }));
+      dragEl = null;
+    });
+  }
+
   initFilters();
   render();
+
+  var sopContainer = document.getElementById('sopList');
+  function sopSaveOrder(newOrder) {
+    var allSops = JSON.parse(localStorage.getItem('sops') || 'null') || SOPS;
+    var sorted = newOrder.map(function(id) {
+      return allSops.find(function(s) { return String(s.id) === id; });
+    }).filter(Boolean);
+    SOPS = sorted;
+    localStorage.setItem('sops', JSON.stringify(sorted));
+  }
+  addMouseDrag(sopContainer, sopSaveOrder);
+  addTouchDrag(sopContainer, sopSaveOrder);
 </script>
 
 </body>

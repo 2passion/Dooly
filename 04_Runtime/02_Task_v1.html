@@ -43,21 +43,6 @@
     min-height: 36px;
     -webkit-tap-highlight-color: transparent;
   }
-  .header-right { display: flex; align-items: center; gap: 8px; }
-  .icon-btn {
-    background: #1c2333;
-    border: 1px solid rgba(77,163,255,0.3);
-    border-radius: 8px;
-    color: #4da3ff;
-    font-size: 18px;
-    width: 36px;
-    height: 36px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    -webkit-tap-highlight-color: transparent;
-  }
 
   main {
     flex: 1;
@@ -65,6 +50,10 @@
     padding: 16px;
     padding-bottom: 8px;
   }
+
+  .data-btn-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .btn-download { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
+  .btn-upload   { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
 
   /* 업무 추가 폼 */
   .form-panel {
@@ -152,7 +141,6 @@
     flex: 1;
   }
 
-  /* 우선순위 신호등 */
   .signal {
     display: flex;
     align-items: center;
@@ -202,6 +190,19 @@
     font-size: 15px;
   }
 
+  .drag-handle {
+    color: rgba(255,255,255,0.2);
+    font-size: 18px;
+    cursor: grab;
+    padding-right: 10px;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .dragging {
+    opacity: 0.4;
+    background: #263045 !important;
+  }
+
   nav {
     background: #1c2333;
     border-top: 1px solid rgba(77,163,255,0.15);
@@ -229,14 +230,14 @@
 
 <header>
   <h1>업무 관리</h1>
-  <div class="header-right">
-    <button class="icon-btn" onclick="downloadTasks()" title="JSON 다운로드">📥</button>
-    <button class="icon-btn" onclick="uploadTasks()"   title="JSON 업로드">📤</button>
-    <button class="add-btn"  onclick="toggleForm()">+ 업무 추가</button>
-  </div>
+  <button class="add-btn" onclick="toggleForm()">+ 업무 추가</button>
 </header>
 
 <main>
+  <div class="data-btn-row">
+    <button class="btn-download" onclick="downloadTasks()">📥 JSON 다운로드</button>
+    <button class="btn-upload"   onclick="uploadTasks()">📤 JSON 업로드</button>
+  </div>
   <div class="form-panel" id="formPanel">
     <div class="form-group">
       <label>업무 제목</label>
@@ -249,9 +250,9 @@
     <div class="form-group">
       <label>우선순위</label>
       <select id="inputPriority">
-        <option value="normal">normal</option>
-        <option value="today">today</option>
-        <option value="urgent">urgent</option>
+        <option value="normal">보통</option>
+        <option value="today">오늘</option>
+        <option value="urgent">즉시</option>
       </select>
     </div>
     <div class="form-actions">
@@ -294,11 +295,20 @@
   var STATUS_CYCLE = ['pending', 'in_progress', 'completed'];
   var STATUS_LABEL = { pending: '대기', in_progress: '진행중', completed: '완료' };
   var PRIORITY_COLOR = { urgent: '#ff4444', today: '#ffcc00', normal: '#3cc864' };
+  var PRIORITY_LABEL = { urgent: '즉시', today: '오늘', normal: '보통' };
 
   function signal(priority) {
     var p = priority || 'normal';
     var color = PRIORITY_COLOR[p] || PRIORITY_COLOR.normal;
-    return '<span class="signal" style="color:' + color + '">● ' + p + '</span>';
+    var label = PRIORITY_LABEL[p] || p;
+    return '<span class="signal" style="color:' + color + '">● ' + label + '</span>';
+  }
+
+  function getToday() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
   }
 
   function loadTasks() {
@@ -378,8 +388,9 @@
     container.innerHTML = tasks.map(function(t) {
       var label = STATUS_LABEL[t.status] || t.status;
       return [
-        '<div class="task-card" onclick="cycleStatus(\'' + t.id + '\')">',
+        '<div class="task-card" draggable="true" data-id="' + t.id + '" onclick="cycleStatus(\'' + t.id + '\')">',
         '  <div class="task-top">',
+        '    <span class="drag-handle" onclick="event.stopPropagation()">&#10783;</span>',
         '    <span class="task-title">' + escHtml(t.title) + '</span>',
         '    ' + signal(t.priority),
         '  </div>',
@@ -394,7 +405,7 @@
   }
 
   function downloadTasks() {
-    downloadJSON(loadTasks(), 'task_template.json');
+    downloadJSON(loadTasks(), 'task_' + getToday() + '.json');
   }
 
   function uploadTasks() {
@@ -431,7 +442,80 @@
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  function addMouseDrag(container, saveOrder) {
+    var dragEl = null;
+    container.addEventListener('dragstart', function(e) {
+      dragEl = e.target.closest('[data-id]');
+      if (dragEl) setTimeout(function() { dragEl.classList.add('dragging'); }, 0);
+    });
+    container.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (!dragEl) return;
+      var after = getDragAfterElement(container, e.clientY);
+      if (after == null) container.appendChild(dragEl);
+      else container.insertBefore(dragEl, after);
+    });
+    container.addEventListener('dragend', function() {
+      if (!dragEl) return;
+      dragEl.classList.remove('dragging');
+      saveOrder(Array.from(container.querySelectorAll('[data-id]'))
+        .map(function(el) { return el.getAttribute('data-id'); }));
+      dragEl = null;
+    });
+  }
+
+  function getDragAfterElement(container, y) {
+    var items = Array.from(container.querySelectorAll('[data-id]:not(.dragging)'));
+    return items.reduce(function(closest, child) {
+      var box = child.getBoundingClientRect();
+      var offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+      return closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  function addTouchDrag(container, saveOrder) {
+    var dragEl = null;
+    container.addEventListener('touchstart', function(e) {
+      var handle = e.target.closest('.drag-handle');
+      if (!handle) return;
+      dragEl = handle.closest('[data-id]');
+      if (dragEl) dragEl.classList.add('dragging');
+      e.preventDefault();
+    }, { passive: false });
+    container.addEventListener('touchmove', function(e) {
+      if (!dragEl) return;
+      e.preventDefault();
+      var y = e.touches[0].clientY;
+      var items = Array.from(container.querySelectorAll('[data-id]:not(.dragging)'));
+      var after = items.find(function(item) {
+        var rect = item.getBoundingClientRect();
+        return y < rect.top + rect.height / 2;
+      });
+      if (after) container.insertBefore(dragEl, after);
+      else container.appendChild(dragEl);
+    }, { passive: false });
+    container.addEventListener('touchend', function() {
+      if (!dragEl) return;
+      dragEl.classList.remove('dragging');
+      saveOrder(Array.from(container.querySelectorAll('[data-id]'))
+        .map(function(el) { return el.getAttribute('data-id'); }));
+      dragEl = null;
+    });
+  }
+
   renderTasks();
+
+  var taskContainer = document.getElementById('taskList');
+  function taskSaveOrder(newOrder) {
+    var tasks = loadTasks();
+    var sorted = newOrder.map(function(id) {
+      return tasks.find(function(t) { return t.id === id; });
+    }).filter(Boolean);
+    saveTasks(sorted);
+  }
+  addMouseDrag(taskContainer, taskSaveOrder);
+  addTouchDrag(taskContainer, taskSaveOrder);
 </script>
 
 </body>

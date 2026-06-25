@@ -95,6 +95,19 @@
   .btn-download { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
   .btn-upload   { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
 
+  .drag-handle {
+    color: rgba(255,255,255,0.2);
+    font-size: 18px;
+    cursor: grab;
+    padding-right: 10px;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .dragging {
+    opacity: 0.4;
+    background: #263045 !important;
+  }
+
   nav {
     background: #1c2333;
     border-top: 1px solid rgba(77,163,255,0.15);
@@ -165,7 +178,7 @@
       id: 1,
       title: '시스템 오픈 안내',
       date: '2026-06-25',
-      body: 'King Assistant OS v1.0이 오픈되었습니다.\n\n이 시스템은 조교 업무 운영을 지원하기 위한 시스템입니다.\n\n주요 기능:\n- 업무 등록 및 상태 관리\n- SOP 검색\n- FAQ 검색\n- Dooly AI 질의응답\n\n사용 중 문의사항은 담당자에게 문의해 주세요.'
+      body: 'KING Assistant OS v1.0이 오픈되었습니다.\n\n이 시스템은 조교 업무 운영을 지원하기 위한 시스템입니다.\n\n주요 기능:\n- 업무 등록 및 상태 관리\n- SOP 검색\n- FAQ 검색\n- Dooly AI 질의응답\n\n사용 중 문의사항은 담당자에게 문의해 주세요.'
     },
     {
       id: 2,
@@ -187,8 +200,15 @@
     render();
   }
 
+  function getToday() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+
   function downloadNotices() {
-    downloadJSON(NOTICES, 'notice_template.json');
+    downloadJSON(NOTICES, 'notice_' + getToday() + '.json');
   }
 
   function uploadNotices() {
@@ -228,8 +248,9 @@
     container.innerHTML = NOTICES.map(function(n) {
       var isOpen = openId === n.id;
       return [
-        '<div class="notice-item' + (isOpen ? ' open' : '') + '" onclick="toggle(' + n.id + ')">',
+        '<div class="notice-item' + (isOpen ? ' open' : '') + '" draggable="true" data-id="' + String(n.id) + '" onclick="toggle(' + n.id + ')">',
         '  <div class="notice-header">',
+        '    <span class="drag-handle" onclick="event.stopPropagation()">&#10783;</span>',
         '    <div class="notice-left">',
         '      <div class="notice-title">' + escHtml(n.title) + '</div>',
         '      <div class="notice-date">' + n.date + '</div>',
@@ -246,7 +267,81 @@
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  function addMouseDrag(container, saveOrder) {
+    var dragEl = null;
+    container.addEventListener('dragstart', function(e) {
+      dragEl = e.target.closest('[data-id]');
+      if (dragEl) setTimeout(function() { dragEl.classList.add('dragging'); }, 0);
+    });
+    container.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (!dragEl) return;
+      var after = getDragAfterElement(container, e.clientY);
+      if (after == null) container.appendChild(dragEl);
+      else container.insertBefore(dragEl, after);
+    });
+    container.addEventListener('dragend', function() {
+      if (!dragEl) return;
+      dragEl.classList.remove('dragging');
+      saveOrder(Array.from(container.querySelectorAll('[data-id]'))
+        .map(function(el) { return el.getAttribute('data-id'); }));
+      dragEl = null;
+    });
+  }
+
+  function getDragAfterElement(container, y) {
+    var items = Array.from(container.querySelectorAll('[data-id]:not(.dragging)'));
+    return items.reduce(function(closest, child) {
+      var box = child.getBoundingClientRect();
+      var offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+      return closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  function addTouchDrag(container, saveOrder) {
+    var dragEl = null;
+    container.addEventListener('touchstart', function(e) {
+      var handle = e.target.closest('.drag-handle');
+      if (!handle) return;
+      dragEl = handle.closest('[data-id]');
+      if (dragEl) dragEl.classList.add('dragging');
+      e.preventDefault();
+    }, { passive: false });
+    container.addEventListener('touchmove', function(e) {
+      if (!dragEl) return;
+      e.preventDefault();
+      var y = e.touches[0].clientY;
+      var items = Array.from(container.querySelectorAll('[data-id]:not(.dragging)'));
+      var after = items.find(function(item) {
+        var rect = item.getBoundingClientRect();
+        return y < rect.top + rect.height / 2;
+      });
+      if (after) container.insertBefore(dragEl, after);
+      else container.appendChild(dragEl);
+    }, { passive: false });
+    container.addEventListener('touchend', function() {
+      if (!dragEl) return;
+      dragEl.classList.remove('dragging');
+      saveOrder(Array.from(container.querySelectorAll('[data-id]'))
+        .map(function(el) { return el.getAttribute('data-id'); }));
+      dragEl = null;
+    });
+  }
+
   render();
+
+  var noticeContainer = document.getElementById('noticeList');
+  function noticeSaveOrder(newOrder) {
+    var allNotices = JSON.parse(localStorage.getItem('notices') || 'null') || NOTICES;
+    var sorted = newOrder.map(function(id) {
+      return allNotices.find(function(n) { return String(n.id) === id; });
+    }).filter(Boolean);
+    NOTICES = sorted;
+    localStorage.setItem('notices', JSON.stringify(sorted));
+  }
+  addMouseDrag(noticeContainer, noticeSaveOrder);
+  addTouchDrag(noticeContainer, noticeSaveOrder);
 </script>
 
 </body>

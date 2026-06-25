@@ -68,15 +68,13 @@
     gap: 12px;
   }
 
+  .faq-num { color: #4da3ff; font-weight: 700; margin-right: 4px; }
+
   .faq-q-text {
     font-size: 15px;
     font-weight: 600;
     line-height: 1.4;
     flex: 1;
-  }
-  .faq-q-text::before {
-    content: 'Q. ';
-    color: #4da3ff;
   }
 
   .faq-arrow {
@@ -114,6 +112,19 @@
   .data-btn-row { display: flex; gap: 10px; margin-bottom: 12px; }
   .btn-download { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
   .btn-upload   { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
+
+  .drag-handle {
+    color: rgba(255,255,255,0.2);
+    font-size: 18px;
+    cursor: grab;
+    padding-right: 10px;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .dragging {
+    opacity: 0.4;
+    background: #263045 !important;
+  }
 
   nav {
     background: #1c2333;
@@ -250,7 +261,7 @@
   var openId = null;
 
   function downloadFAQs() {
-    downloadJSON(FAQS, 'faq_template.json');
+    downloadJSON(FAQS, 'faq_' + getToday() + '.json');
   }
 
   function uploadFAQs() {
@@ -284,6 +295,13 @@
     input.click();
   }
 
+  function getToday() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+
   function toggle(id) {
     openId = openId === id ? null : id;
     render();
@@ -301,12 +319,13 @@
       return;
     }
 
-    container.innerHTML = filtered.map(function(f) {
+    container.innerHTML = filtered.map(function(f, index) {
       var isOpen = openId === f.id;
       return [
-        '<div class="faq-item' + (isOpen ? ' open' : '') + '" onclick="toggle(' + f.id + ')">',
+        '<div class="faq-item' + (isOpen ? ' open' : '') + '" draggable="true" data-id="' + String(f.id) + '" onclick="toggle(' + f.id + ')">',
         '  <div class="faq-question">',
-        '    <span class="faq-q-text">' + escHtml(f.question) + '</span>',
+        '    <span class="drag-handle" onclick="event.stopPropagation()">&#10783;</span>',
+        '    <span class="faq-q-text"><span class="faq-num">Q' + (index + 1) + '.</span>' + escHtml(f.question) + '</span>',
         '    <span class="faq-arrow">▼</span>',
         '  </div>',
         '  <div class="faq-answer">' + escHtml(f.answer) + '</div>',
@@ -319,7 +338,81 @@
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  function addMouseDrag(container, saveOrder) {
+    var dragEl = null;
+    container.addEventListener('dragstart', function(e) {
+      dragEl = e.target.closest('[data-id]');
+      if (dragEl) setTimeout(function() { dragEl.classList.add('dragging'); }, 0);
+    });
+    container.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (!dragEl) return;
+      var after = getDragAfterElement(container, e.clientY);
+      if (after == null) container.appendChild(dragEl);
+      else container.insertBefore(dragEl, after);
+    });
+    container.addEventListener('dragend', function() {
+      if (!dragEl) return;
+      dragEl.classList.remove('dragging');
+      saveOrder(Array.from(container.querySelectorAll('[data-id]'))
+        .map(function(el) { return el.getAttribute('data-id'); }));
+      dragEl = null;
+    });
+  }
+
+  function getDragAfterElement(container, y) {
+    var items = Array.from(container.querySelectorAll('[data-id]:not(.dragging)'));
+    return items.reduce(function(closest, child) {
+      var box = child.getBoundingClientRect();
+      var offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+      return closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  function addTouchDrag(container, saveOrder) {
+    var dragEl = null;
+    container.addEventListener('touchstart', function(e) {
+      var handle = e.target.closest('.drag-handle');
+      if (!handle) return;
+      dragEl = handle.closest('[data-id]');
+      if (dragEl) dragEl.classList.add('dragging');
+      e.preventDefault();
+    }, { passive: false });
+    container.addEventListener('touchmove', function(e) {
+      if (!dragEl) return;
+      e.preventDefault();
+      var y = e.touches[0].clientY;
+      var items = Array.from(container.querySelectorAll('[data-id]:not(.dragging)'));
+      var after = items.find(function(item) {
+        var rect = item.getBoundingClientRect();
+        return y < rect.top + rect.height / 2;
+      });
+      if (after) container.insertBefore(dragEl, after);
+      else container.appendChild(dragEl);
+    }, { passive: false });
+    container.addEventListener('touchend', function() {
+      if (!dragEl) return;
+      dragEl.classList.remove('dragging');
+      saveOrder(Array.from(container.querySelectorAll('[data-id]'))
+        .map(function(el) { return el.getAttribute('data-id'); }));
+      dragEl = null;
+    });
+  }
+
   render();
+
+  var faqContainer = document.getElementById('faqList');
+  function faqSaveOrder(newOrder) {
+    var allFaqs = JSON.parse(localStorage.getItem('faqs') || 'null') || FAQS;
+    var sorted = newOrder.map(function(id) {
+      return allFaqs.find(function(f) { return String(f.id) === id; });
+    }).filter(Boolean);
+    FAQS = sorted;
+    localStorage.setItem('faqs', JSON.stringify(sorted));
+  }
+  addMouseDrag(faqContainer, faqSaveOrder);
+  addTouchDrag(faqContainer, faqSaveOrder);
 </script>
 
 </body>
