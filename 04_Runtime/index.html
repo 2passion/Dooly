@@ -212,6 +212,25 @@
   }
   nav a.active { color: #4da3ff; }
   nav a .nav-icon { font-size: 18px; }
+
+  /* 공지 JSON 버튼 */
+  .notice-btn-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .notice-btn-dl { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
+  .notice-btn-ul { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
+
+  /* 드래그 핸들 */
+  .notice-drag-handle {
+    color: rgba(255,255,255,0.2);
+    font-size: 18px;
+    cursor: grab;
+    flex-shrink: 0;
+    user-select: none;
+    padding-right: 8px;
+  }
+  .notice-item.dragging {
+    opacity: 0.4;
+    background: #263045 !important;
+  }
 </style>
 </head>
 <body>
@@ -258,6 +277,10 @@
 
   <div class="section-block">
     <p class="section-title">공지사항</p>
+    <div class="notice-btn-row">
+      <button class="notice-btn-dl" onclick="downloadNotices()">📥 JSON 다운로드</button>
+      <button class="notice-btn-ul" onclick="uploadNotices()">📤 JSON 업로드</button>
+    </div>
     <div id="noticeList"></div>
   </div>
 </main>
@@ -278,10 +301,6 @@
   <a href="04_FAQ_v1.html">
     <span class="nav-icon">❓</span>
     <span>FAQ</span>
-  </a>
-  <a href="05_Notice_v1.html">
-    <span class="nav-icon">📢</span>
-    <span>공지</span>
   </a>
   <a href="06_Dooly_v1.html">
     <span class="nav-icon">🤖</span>
@@ -330,8 +349,9 @@
     document.getElementById('noticeList').innerHTML = data.map(function(n) {
       var isOpen = openId === n.id;
       return [
-        '<div class="notice-item' + (isOpen ? ' open' : '') + '" onclick="toggle(' + n.id + ')">',
-        '  <div class="notice-header">',
+        '<div class="notice-item' + (isOpen ? ' open' : '') + '" draggable="true" data-id="' + String(n.id) + '">',
+        '  <div class="notice-header" onclick="toggle(' + n.id + ')">',
+        '    <span class="notice-drag-handle" onclick="event.stopPropagation()">&#10783;</span>',
         '    <div class="notice-left">',
         '      <div class="notice-title">' + escHtml(n.title) + '</div>',
         '      <div class="notice-date">' + n.date + '</div>',
@@ -342,6 +362,8 @@
         '</div>'
       ].join('');
     }).join('');
+
+    initNoticeDrag();
   }
 
   /* ── 달력 ── */
@@ -493,6 +515,116 @@
 
   function escHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function getToday() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+
+  function downloadNotices() {
+    var stored = localStorage.getItem('notices');
+    var data = stored ? JSON.parse(stored) : NOTICES;
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'notice_' + getToday() + '.json'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function uploadNotices() {
+    var input = document.createElement('input');
+    input.type = 'file'; input.accept = '.json';
+    input.onchange = function(e) {
+      var file = e.target.files[0]; if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          var data = JSON.parse(ev.target.result);
+          localStorage.setItem('notices', JSON.stringify(data));
+          openId = null;
+          render();
+        } catch(err) { alert('JSON 형식이 올바르지 않습니다.'); }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  function initNoticeDrag() {
+    var container = document.getElementById('noticeList');
+    if (!container) return;
+
+    var dragEl = null;
+
+    container.addEventListener('dragstart', function(e) {
+      dragEl = e.target.closest('[data-id]');
+      if (dragEl) setTimeout(function() { dragEl.classList.add('dragging'); }, 0);
+    });
+    container.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (!dragEl) return;
+      var after = getNoticeDragAfter(container, e.clientY);
+      if (after == null) container.appendChild(dragEl);
+      else container.insertBefore(dragEl, after);
+    });
+    container.addEventListener('dragend', function() {
+      if (!dragEl) return;
+      dragEl.classList.remove('dragging');
+      var newOrder = Array.from(container.querySelectorAll('[data-id]'))
+        .map(function(el) { return el.getAttribute('data-id'); });
+      saveNoticeOrder(newOrder);
+      dragEl = null;
+    });
+
+    container.addEventListener('touchstart', function(e) {
+      var handle = e.target.closest('.notice-drag-handle');
+      if (!handle) return;
+      dragEl = handle.closest('[data-id]');
+      if (dragEl) dragEl.classList.add('dragging');
+      e.preventDefault();
+    }, { passive: false });
+    container.addEventListener('touchmove', function(e) {
+      if (!dragEl) return;
+      e.preventDefault();
+      var y = e.touches[0].clientY;
+      var items = Array.from(container.querySelectorAll('[data-id]:not(.dragging)'));
+      var after = items.find(function(item) {
+        var rect = item.getBoundingClientRect();
+        return y < rect.top + rect.height / 2;
+      });
+      if (after) container.insertBefore(dragEl, after);
+      else container.appendChild(dragEl);
+    }, { passive: false });
+    container.addEventListener('touchend', function() {
+      if (!dragEl) return;
+      dragEl.classList.remove('dragging');
+      var newOrder = Array.from(container.querySelectorAll('[data-id]'))
+        .map(function(el) { return el.getAttribute('data-id'); });
+      saveNoticeOrder(newOrder);
+      dragEl = null;
+    });
+  }
+
+  function getNoticeDragAfter(container, y) {
+    var items = Array.from(container.querySelectorAll('[data-id]:not(.dragging)'));
+    return items.reduce(function(closest, child) {
+      var box = child.getBoundingClientRect();
+      var offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+      return closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  function saveNoticeOrder(newOrder) {
+    var stored = localStorage.getItem('notices');
+    var allNotices = stored ? JSON.parse(stored) : NOTICES;
+    var sorted = newOrder.map(function(id) {
+      return allNotices.find(function(n) { return String(n.id) === id; });
+    }).filter(Boolean);
+    localStorage.setItem('notices', JSON.stringify(sorted));
   }
 
   render();
