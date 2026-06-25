@@ -111,6 +111,10 @@
     font-size: 15px;
   }
 
+  .data-btn-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .btn-download { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
+  .btn-upload   { flex: 1; background: #1c2333; border: 1px solid rgba(77,163,255,0.3); color: #4da3ff; border-radius: 8px; font-size: 14px; padding: 10px; cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
+
   nav {
     background: #1c2333;
     border-top: 1px solid rgba(77,163,255,0.15);
@@ -141,6 +145,10 @@
 </header>
 
 <main>
+  <div class="data-btn-row">
+    <button class="btn-download" onclick="downloadFAQs()">📥 JSON 다운로드</button>
+    <button class="btn-upload"   onclick="uploadFAQs()">📤 JSON 업로드</button>
+  </div>
   <input type="text" class="search-box" id="searchInput" placeholder="FAQ 검색..." oninput="render()">
   <div class="faq-list" id="faqList"></div>
 </main>
@@ -236,7 +244,45 @@
     }
   ];
 
+  var stored = localStorage.getItem('faqs');
+  if (stored) { try { FAQS = JSON.parse(stored); } catch(e) {} }
+
   var openId = null;
+
+  function downloadFAQs() {
+    downloadJSON(FAQS, 'faq_template.json');
+  }
+
+  function uploadFAQs() {
+    uploadJSON(function(data) {
+      FAQS = data;
+      localStorage.setItem('faqs', JSON.stringify(data));
+      openId = null; render();
+    });
+  }
+
+  function downloadJSON(data, filename) {
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function uploadJSON(callback) {
+    var input = document.createElement('input');
+    input.type = 'file'; input.accept = '.json';
+    input.onchange = function(e) {
+      var file = e.target.files[0]; if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        try { callback(JSON.parse(ev.target.result)); }
+        catch(err) { alert('JSON 형식이 올바르지 않습니다.'); }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
 
   function toggle(id) {
     openId = openId === id ? null : id;
