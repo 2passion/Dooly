@@ -193,8 +193,9 @@
   function mockResponse(input) {
     var text = input.toLowerCase();
 
+    // 기존 키워드
     if (text.includes('복사기') || text.includes('종이 걸') || text.includes('용지')) {
-      return '복사기/스캔 SOP를 확인하세요.\n구겨진 종이는 ADF 대신 수동(평판) 스캔을 사용하세요.';
+      return '복사기/스캔 SOP와 복사기 종이 걸림 SOP를 확인하세요.\n구겨진 종이는 ADF 대신 수동(평판) 스캔을 사용하세요.';
     }
     if (text.includes('복테 보관함') || text.includes('보관함')) {
       return '복테 보관함 운영 SOP를 확인하세요.\nX존(고등): 고3→고2→고1 / Y존(초중): 초등→중3→중2→중1 순서입니다.';
@@ -227,7 +228,39 @@
       return '퇴근 루틴 SOP를 확인하세요.\n퇴근 30분 전 복테 프린트/저장, 퇴근 직전 주변 정리 및 PC 전원 끄기를 진행합니다.';
     }
     if (text.includes('인수인계')) {
-      return '인수인계는 3단계로 진행합니다.\n1단계(모델링) → 2단계(코칭) → 3단계(영역별 실무 전수). 종합 가이드북을 참고하세요.';
+      return '인수인계는 3단계로 진행합니다.\n1단계(모델링) → 2단계(코칭) → 3단계(독립 수행). 종합 가이드북을 참고하세요.';
+    }
+
+    // 신규 키워드
+    if (text.includes('채점') || text.includes('별표') || text.includes('세모') || text.includes('슬래시')) {
+      return '채점 규칙 SOP를 확인하세요.\nO(정답) / /(오답1차) / △(스스로해결) / ☆(질문필요) / ☆위에큰△(질문후해결)';
+    }
+    if (text.includes('교재검사') || text.includes('교재 검사')) {
+      return '교재검사 SOP를 확인하세요.\n개념편과 유형편을 교대로 검사합니다. 덜 완료된 페이지 번호만 목차에 기록하세요.';
+    }
+    if (text.includes('진단평가') || text.includes('커트라인')) {
+      return '진단평가 SOP를 확인하세요.\n1차 커트라인 70점 / 2차 커트라인 50점 기준으로 과제가 다릅니다.';
+    }
+    if (text.includes('파일명') || text.includes('파일 이름') || text.includes('폴더명')) {
+      return '파일명 규칙 SOP를 확인하세요.\nhwp: 날짜+복테+학년+교재+학생이름 / WANT: 날짜+교재+학생이름';
+    }
+    if (text.includes('첫 출근') || text.includes('처음') || text.includes('온보딩') || text.includes('신규')) {
+      return '신규 조교 온보딩 SOP를 확인하세요.\n서류제출 → 성범죄조회 → 이니셜확인 → 조교할일 확인 순서로 진행합니다.';
+    }
+    if (text.includes('베낌') || text.includes('베끼') || text.includes('의심')) {
+      return '베낌 판별 SOP를 확인하세요.\n3초 스캔 → 2초 질문("이 문제 어떻게 풀었어요?") → 5초 확정(재풀이)';
+    }
+    if (text.includes('학생관리') || text.includes('규율') || text.includes('첨삭') || text.includes('습관')) {
+      return '학생관리 SOP를 확인하세요.\n규율(습관잡기) / 첨삭(몰라서못함) / 검사(알지만안함) 3가지 유형으로 구분합니다.';
+    }
+    if (text.includes('22개정') || text.includes('2022') || text.includes('교육과정')) {
+      return '파일명 규칙 SOP를 확인하세요.\n2022는 출판연도, 22개정은 교육과정 개정연도입니다. 복테 제작 시 학생별로 반드시 확인하세요.';
+    }
+    if (text.includes('프린터') || text.includes('인터넷') || text.includes('오류')) {
+      return '인터넷/프린터 오류 SOP를 확인하세요.\n단독 해결 불가 시 원장에게 즉시 보고하세요.';
+    }
+    if (text.includes('분실') || text.includes('없어') || text.includes('못 찾')) {
+      return '학생 자료 분실/누락 SOP를 확인하세요.\n복테 보관함 재확인 → 학생 폴더 확인 → 공유폴더 확인 → 재출력 순서로 진행합니다.';
     }
 
     return '확인이 필요합니다. SOP 또는 FAQ를 검색해보세요.';
