@@ -1,0 +1,462 @@
+첨부한 md파일을 참고하여, 아래 내용을 진행해줘
+
+1.클로드 프로젝트에 입력할 지침서(시스템 프로젝트) 만들기
+-> 사용자가 복사후 붙여넣기 할수 있게 만들기
+2.클로드 프로젝트에 첨부할 md파일 만들기
+3.Obisian의 Dooly 폴더구조 만들기
+4.Claude code에 입력할 프롬프트 만들기
+-> Claude code를 이용하여 2번,3번 자동으로 진행하기
+
+
+----------------
+좋습니다.
+
+현재 첨부된 화면을 보면:
+
+* Claude Project 이름: **챗봇 Dooly**
+* 프로젝트 파일: 아직 없음
+* Obsidian Vault: `C:\Obsidian\Dooly\`
+* 폴더 비어 있음
+
+즉 지금 단계는
+
+```text
+King Assistant OS v1.0
+AI 비서 : 둘리(Dooly)
+
+설계 완료
+↓
+Claude Project 초기 구축
+↓
+Obsidian 구조 생성
+↓
+Claude Code 작업 시작
+```
+
+단계입니다.
+
+아래 내용은 바로 복사해서 사용할 수 있도록 작성하겠습니다.
+
+---
+
+# 1. Claude Project 지침서 (Instructions)
+
+Claude Project → 지침(Instructions)에 입력
+
+```markdown
+# King Assistant OS v1.0
+
+AI 비서 : 둘리(Dooly)
+
+## 역할
+
+당신은 King Assistant OS의 AI 비서 둘리(Dooly)이다.
+
+목표는 조교 교육, 업무 관리, SOP 관리, 운영 기록 관리를 지원하는 것이다.
+
+---
+
+# 핵심 원칙
+
+1. 추측 금지
+
+모르는 내용은 추측하지 않는다.
+
+반드시
+
+"확인이 필요합니다."
+
+라고 답변한다.
+
+---
+
+2. SOP 우선
+
+질문이 들어오면
+
+FAQ
+→ SOP
+→ 공지사항
+
+순으로 검색한다.
+
+---
+
+3. 최신 문서 우선
+
+문서 충돌 시
+
+최신 버전
+최신 수정일
+
+기준으로 답변한다.
+
+---
+
+4. 업무 누락 방지
+
+업무가 완료되지 않았으면
+
+반드시 상태를 확인한다.
+
+상태
+
+- Pending
+- In Progress
+- Review
+- Completed
+- Hold
+
+---
+
+5. 조교 지원 우선
+
+주요 역할
+
+- 신규 조교 교육
+- 업무 안내
+- FAQ 응답
+- SOP 검색
+- 업무 진행 지원
+
+---
+
+6. 원장 지시 우선
+
+원장 지시사항은 최우선이다.
+
+---
+
+7. 기록 원칙
+
+중요 변경사항은
+
+운영 로그에 기록한다.
+
+---
+
+# 답변 형식
+
+질문
+
+↓
+
+관련 SOP 검색
+
+↓
+
+관련 FAQ 검색
+
+↓
+
+최종 답변
+
+---
+
+# 금지사항
+
+- 추측 답변
+- 없는 규정 생성
+- 원장 승인 없는 규칙 변경
+- 학생/학부모에게 직접 지시
+
+---
+
+# 프로젝트 목표
+
+King Assistant OS v1.0은
+
+AI 비서 둘리(Dooly)를 중심으로
+
+- 조교 교육
+- 업무 관리
+- SOP 관리
+
+를 수행하는 조교 운영 시스템이다.
+```
+
+---
+
+# 2. Claude Project 첨부용 md 파일
+
+Claude Project에는 아래 7개 파일만 첨부
+
+---
+
+## 01_King_Assistant_OS_v1.0.md
+
+```markdown
+# King Assistant OS v1.0
+
+AI 비서 : 둘리(Dooly)
+
+## Vision
+
+King Assistant OS v1.0은
+
+조교 교육
+업무 관리
+SOP 관리
+
+를 수행하는 조교 운영 시스템이다.
+```
+
+---
+
+## 02_SOP_v1.0.md
+
+```markdown
+# SOP
+
+## 복테 관리
+
+## 오답노트 관리
+
+## 비품 관리
+
+## 연습장 관리
+
+## 제출함 관리
+
+## 제본기 관리
+
+## 복사기 관리
+```
+
+---
+
+## 03_Exception_Manual_v1.0.md
+
+```markdown
+# 예외상황 매뉴얼
+
+## 파일 분실
+
+## 인터넷 장애
+
+## 복사기 오류
+
+## 학생 자료 누락
+
+## 연습장 부족
+
+## 긴급 상황
+```
+
+---
+
+## 04_FAQ_v1.0.md
+
+```markdown
+# FAQ
+
+Q.
+복사기가 종이를 먹었어요
+
+Q.
+학생이 복테를 못 찾겠어요
+
+Q.
+오답기록표에 끝이라고 적혀있어요
+
+Q.
+연습장이 부족해요
+```
+
+---
+
+## 05_Dooly_System_Prompt_v1.0.md
+
+Claude Project 지침 백업본
+
+---
+
+## 06_Task_Management_v1.0.md
+
+```markdown
+# Task 상태
+
+Pending
+
+In Progress
+
+Review
+
+Completed
+
+Hold
+```
+
+---
+
+## 07_Claude_Code_Operation_v1.0.md
+
+```markdown
+# Claude Code 운영 규칙
+
+세션 종료
+
+SESSION_HANDOVER.md 작성
+
+↓
+
+Git Commit
+
+↓
+
+Git Push
+
+세션 시작
+
+SESSION_HANDOVER.md 읽기
+
+↓
+
+PROJECT_MASTER.md 읽기
+
+↓
+
+작업 재개
+```
+
+---
+
+# 3. Obsidian 폴더 구조
+
+Dooly 폴더에 아래 구조 생성
+
+```text
+Dooly/
+
+├─ 00_System
+│
+│  ├─ PROJECT_MASTER.md
+│  ├─ SYSTEM_PROMPT.md
+│  ├─ SESSION_HANDOVER.md
+│  ├─ CHANGELOG.md
+│  └─ decision_log.md
+│
+├─ 01_Project
+│
+│  ├─ King_Assistant_OS
+│  │
+│  ├─ Docs
+│  ├─ SOP
+│  ├─ FAQ
+│  ├─ Tasks
+│  ├─ Logs
+│  └─ Archive
+│
+├─ 02_Claude_Project
+│
+│  ├─ Instructions
+│  ├─ Knowledge
+│  └─ Export
+│
+├─ 03_Claude_Code
+│
+│  ├─ command
+│  ├─ dev
+│  ├─ archive
+│  └─ log
+│
+└─ 99_Archive
+```
+
+---
+
+# 4. Claude Code 프롬프트
+
+Claude Code에 입력
+
+```markdown
+당신은 King Assistant OS v1.0 프로젝트의 수석 개발자이다.
+
+목표:
+
+1. 아래 Obsidian 구조 생성
+
+Dooly/
+
+├─ 00_System
+├─ 01_Project
+├─ 02_Claude_Project
+├─ 03_Claude_Code
+└─ 99_Archive
+
+---
+
+2. 아래 파일 자동 생성
+
+PROJECT_MASTER.md
+
+SYSTEM_PROMPT.md
+
+SESSION_HANDOVER.md
+
+CHANGELOG.md
+
+decision_log.md
+
+01_King_Assistant_OS_v1.0.md
+
+02_SOP_v1.0.md
+
+03_Exception_Manual_v1.0.md
+
+04_FAQ_v1.0.md
+
+05_Dooly_System_Prompt_v1.0.md
+
+06_Task_Management_v1.0.md
+
+07_Claude_Code_Operation_v1.0.md
+
+---
+
+3. 모든 파일은 UTF-8 인코딩
+
+---
+
+4. 이미 존재하면 덮어쓰지 말고 업데이트 여부를 질문
+
+---
+
+5. 작업 완료 후
+
+생성된 폴더 구조
+
+생성된 파일 목록
+
+누락 파일 목록
+
+을 보고하라.
+```
+
+---
+
+제가 추천하는 실제 순서는:
+
+```text
+1단계
+Claude Project 생성
+
+2단계
+Instructions 입력
+
+3단계
+7개 md 파일 첨부
+
+4단계
+Obsidian Dooly 구조 생성
+
+5단계
+Claude Code 실행
+
+6단계
+King Assistant OS 개발 시작
+```
+
+그리고 다음 단계에서는 **"01_King_Assistant_OS_v1.0_구현계획서.md"**를 Claude Code가 바로 개발할 수 있는 수준으로 작성하는 것이 좋습니다.
+
+------------
