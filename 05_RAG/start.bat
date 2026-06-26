@@ -1,14 +1,13 @@
 @echo off
-chcp 65001 >nul
-echo =============================================
-echo   Dooly RAG 시스템 안내
-echo =============================================
+echo ============================================
+echo  Dooly RAG System
+echo ============================================
 echo.
-echo [최초 실행 또는 데이터 변경 시]
-echo   run_embed.bat 더블클릭
+echo  First time or data changed:
+echo    run_embed.bat
 echo.
-echo [매일 서버 실행 시]
-echo   run_server.bat 더블클릭
+echo  Daily use:
+echo    run_server.bat
 echo.
-echo =============================================
+echo ============================================
 pause
