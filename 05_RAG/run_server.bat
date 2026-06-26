@@ -3,7 +3,7 @@ cd /d C:\Obsidian\Dooly\05_RAG
 
 echo ============================================
 echo  Dooly RAG Server Start
-echo  URL: http://localhost:8000
+echo  URL: http://localhost:8001
 echo  Stop: Close this window or Ctrl+C
 echo ============================================
 echo.
@@ -27,6 +27,6 @@ echo.
 echo [Starting] uvicorn server...
 echo.
 
-python -m uvicorn server:app --host 0.0.0.0 --port 8000
+python -m uvicorn server:app --host 0.0.0.0 --port 8001
 
 pause

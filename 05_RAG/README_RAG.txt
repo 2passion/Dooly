@@ -34,9 +34,9 @@
 └── README_RAG.txt       ← 이 파일
 
 [서버 주소]
-로컬: http://localhost:8000
-같은 와이파이 스마트폰: http://[PC_IP]:8000
-예) http://192.168.0.10:8000
+로컬: http://localhost:8001
+같은 와이파이 스마트폰: http://[PC_IP]:8001
+예) http://192.168.0.10:8001
 
 [PC IP 확인 방법]
 cmd에서: ipconfig
