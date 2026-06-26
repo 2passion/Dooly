@@ -1,10 +1,14 @@
 @echo off
-echo Dooly RAG 서버 시작 중...
+chcp 65001 >nul
+echo =============================================
+echo   Dooly RAG 시스템 안내
+echo =============================================
 echo.
-echo 1. 임베딩 실행 (최초 1회 또는 데이터 변경 시)
-echo    python embed.py
+echo [최초 실행 또는 데이터 변경 시]
+echo   run_embed.bat 더블클릭
 echo.
-echo 2. 서버 실행
-cd /d C:\Obsidian\Dooly\05_RAG
-python -m uvicorn server:app --host 0.0.0.0 --port 8000 --reload
+echo [매일 서버 실행 시]
+echo   run_server.bat 더블클릭
+echo.
+echo =============================================
 pause
