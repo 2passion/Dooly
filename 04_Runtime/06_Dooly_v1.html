@@ -166,6 +166,17 @@
     -webkit-appearance: none;
   }
   .model-select option { background: #0b0f1a; color: #fff; }
+  .clear-btn {
+    background: transparent;
+    border: 1px solid rgba(255,80,80,0.3);
+    color: rgba(255,80,80,0.6);
+    border-radius: 6px;
+    font-size: 11px;
+    padding: 3px 8px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .clear-btn:active { background: rgba(255,80,80,0.1); }
 
   /* 출처 표시 */
   .msg-sources {
@@ -199,6 +210,7 @@
     <option value="qwen2.5:3b">모델 B — qwen2.5:3b (빠름)</option>
     <option value="gemma3:4b">모델 C — gemma3:4b (균형)</option>
   </select>
+  <button class="clear-btn" onclick="clearChatHistory()">대화 초기화</button>
 </div>
 
 <div class="chat-area" id="chatArea"></div>
@@ -367,6 +379,8 @@
       if (loadingEl) {
         loadingEl.querySelector('.msg-bubble').textContent = data.answer;
 
+        saveChatHistory();
+
         if (data.sources && data.sources.length > 0) {
           var sourcesDiv = document.createElement('div');
           sourcesDiv.className = 'msg-sources';
@@ -385,6 +399,7 @@
           });
 
           loadingEl.appendChild(sourcesDiv);
+          saveChatHistory();
         }
       }
     })
@@ -409,11 +424,40 @@
     el.style.height = Math.min(el.scrollHeight, 100) + 'px';
   }
 
+  /* ── 대화 기록 저장/불러오기 ── */
+  var CHAT_STORAGE_KEY = 'dooly_chat_history';
+
+  function saveChatHistory() {
+    var area = document.getElementById('chatArea');
+    if (!area) return;
+    localStorage.setItem(CHAT_STORAGE_KEY, area.innerHTML);
+  }
+
+  function loadChatHistory() {
+    var saved = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (!saved) return false;
+    var area = document.getElementById('chatArea');
+    if (!area) return false;
+    area.innerHTML = saved;
+    area.scrollTop = area.scrollHeight;
+    return true;
+  }
+
+  function clearChatHistory() {
+    localStorage.removeItem(CHAT_STORAGE_KEY);
+    var area = document.getElementById('chatArea');
+    if (area) area.innerHTML = '';
+    addMsg('dooly', '안녕하세요! 무엇이든 질문하세요.');
+  }
+
   function escHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  addMsg('dooly', '안녕하세요! 무엇이든 질문하세요.');
+  // 저장된 대화 기록 불러오기, 없으면 초기 메시지
+  if (!loadChatHistory()) {
+    addMsg('dooly', '안녕하세요! 무엇이든 질문하세요.');
+  }
 </script>
 
 </body>
