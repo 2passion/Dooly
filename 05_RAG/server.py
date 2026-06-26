@@ -2,14 +2,18 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import chromadb
 from chromadb.utils import embedding_functions
 import ollama
+import os
 
 # 경로 설정
-DB_DIR = r"C:\Obsidian\Dooly\05_RAG\db"
-MODEL  = "qwen2.5:7b"
+DB_DIR      = r"C:\Obsidian\Dooly\05_RAG\db"
+RUNTIME_DIR = r"C:\Obsidian\Dooly\04_Runtime"
+MODEL       = "qwen2.5:7b"
 
 # FastAPI 앱 초기화
 app = FastAPI()
@@ -21,6 +25,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 정적 파일 서빙 (HTML/CSS/JS)
+app.mount("/static", StaticFiles(directory=RUNTIME_DIR), name="static")
 
 # Chroma 초기화
 emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
@@ -51,6 +58,17 @@ SYSTEM_PROMPT = """당신은 킹수학 학원의 AI 업무 도우미 둘리(Dool
 @app.get("/")
 def root():
     return {"status": "Dooly RAG 서버 실행 중"}
+
+@app.get("/app")
+def serve_app():
+    return FileResponse(os.path.join(RUNTIME_DIR, "index.html"))
+
+@app.get("/app/{filename}")
+def serve_file(filename: str):
+    filepath = os.path.join(RUNTIME_DIR, filename)
+    if os.path.exists(filepath):
+        return FileResponse(filepath)
+    return {"error": "File not found"}
 
 @app.post("/chat")
 def chat(req: ChatRequest):

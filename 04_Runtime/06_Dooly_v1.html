@@ -350,7 +350,12 @@
     area.scrollTop = area.scrollHeight;
   }
 
-  var RAG_SERVER = 'http://localhost:8001';
+  // 현재 접속한 호스트 기준으로 RAG 서버 주소 자동 설정
+  // 로컬 파일(file://)로 열면 localhost:8001 사용
+  // 서버를 통해 열면 같은 호스트의 8001 포트 사용
+  var RAG_SERVER = (location.protocol === 'file:')
+    ? 'http://localhost:8001'
+    : location.protocol + '//' + location.hostname + ':8001';
 
   function sendMessage() {
     var input = document.getElementById('chatInput');

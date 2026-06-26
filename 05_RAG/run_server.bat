@@ -26,6 +26,11 @@ if not exist "C:\Obsidian\Dooly\05_RAG\db\chroma.sqlite3" (
 echo.
 echo [Starting] uvicorn server...
 echo.
+echo Access URLs:
+echo   PC browser  : http://localhost:8001/app
+echo   Smartphone  : http://192.168.219.100:8001/app
+echo   API status  : http://localhost:8001
+echo.
 
 python -m uvicorn server:app --host 0.0.0.0 --port 8001
 
