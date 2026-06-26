@@ -35,6 +35,7 @@ collection = chroma_client.get_collection(
 # 요청 모델
 class ChatRequest(BaseModel):
     message: str
+    model: str = "qwen2.5:7b"
 
 # 시스템 프롬프트
 SYSTEM_PROMPT = """당신은 킹수학 학원의 AI 업무 도우미 둘리(Dooly)입니다.
@@ -72,8 +73,9 @@ def chat(req: ChatRequest):
 위 내용을 참고하여 아래 질문에 답변하세요:
 질문: {req.message}"""
 
+        selected_model = req.model if req.model else MODEL
         response = ollama.chat(
-            model=MODEL,
+            model=selected_model,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user",   "content": prompt}
@@ -81,7 +83,34 @@ def chat(req: ChatRequest):
         )
 
         answer = response["message"]["content"]
-        return {"answer": answer, "sources": results["metadatas"][0] if results["metadatas"] else []}
+
+        # 출처 상세 파싱
+        sources = []
+        if results["metadatas"] and results["metadatas"][0]:
+            for meta in results["metadatas"][0]:
+                source_file = meta.get("source", "")
+                chunk_index = meta.get("chunk", 0)
+
+                if "faq_data" in source_file:
+                    sources.append({
+                        "type": "FAQ",
+                        "label": "Q" + str(chunk_index + 1),
+                        "file": source_file
+                    })
+                elif "sop_data" in source_file:
+                    sources.append({
+                        "type": "SOP",
+                        "label": str(chunk_index + 1),
+                        "file": source_file
+                    })
+                else:
+                    sources.append({
+                        "type": "DOC",
+                        "label": source_file.replace(".txt", ""),
+                        "file": source_file
+                    })
+
+        return {"answer": answer, "sources": sources}
 
     except Exception as e:
         return {"answer": f"오류가 발생했습니다: {str(e)}", "sources": []}
