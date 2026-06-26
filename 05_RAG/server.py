@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 import chromadb
 from chromadb.utils import embedding_functions
@@ -69,6 +69,10 @@ def serve_file(filename: str):
     if os.path.exists(filepath):
         return FileResponse(filepath)
     return {"error": "File not found"}
+
+@app.get("/{filename}.html")
+async def redirect_html(filename: str):
+    return RedirectResponse(url=f"/app/{filename}.html")
 
 @app.post("/chat")
 def chat(req: ChatRequest):
