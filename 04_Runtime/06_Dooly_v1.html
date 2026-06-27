@@ -194,6 +194,12 @@
   .source-tag.faq { background: rgba(60,200,100,0.1); border: 1px solid rgba(60,200,100,0.3); color: #3cc864; }
   .source-tag.sop { background: rgba(255,180,50,0.1); border: 1px solid rgba(255,180,50,0.3); color: #ffb432; }
   .source-tag.doc { background: rgba(180,130,255,0.1); border: 1px solid rgba(180,130,255,0.3); color: #b482ff; }
+  .msg-time {
+    font-size: 10px;
+    opacity: 0.4;
+    margin-left: 8px;
+    font-weight: 400;
+  }
 </style>
 <script src="data.js"></script>
 </head>
@@ -251,6 +257,28 @@
 </nav>
 
 <script>
+  function getNow() {
+    var d = new Date();
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    var dd = String(d.getDate()).padStart(2, '0');
+    var hh = String(d.getHours()).padStart(2, '0');
+    var min = String(d.getMinutes()).padStart(2, '0');
+    return d.getFullYear() + '-' + mm + '-' + dd + ' ' + hh + ':' + min;
+  }
+
+  function renderSourceTags(matched, type) {
+    if (!matched) return '';
+    var color = type === 'faq'
+      ? 'background:#1a4a2e;color:#4ade80;border:1px solid #4ade80;'
+      : 'background:#4a2e0a;color:#fb923c;border:1px solid #fb923c;';
+    var label = type === 'faq'
+      ? 'FAQ Q' + matched.id
+      : 'SOP ' + matched.id;
+    return '<div class="source-tags" style="margin-top:6px;">' +
+      '<span style="' + color + 'border-radius:4px;font-size:11px;padding:2px 8px;font-weight:700;">' +
+      label + '</span></div>';
+  }
+
   function mockResponse(input) {
     var text = input.toLowerCase();
 
@@ -299,7 +327,8 @@
     var div = document.createElement('div');
     div.className = 'msg ' + who;
     div.innerHTML = [
-      '<div class="msg-sender">' + (who === 'dooly' ? 'Dooly' : '나') + '</div>',
+      '<div class="msg-sender">' + (who === 'dooly' ? 'Dooly' : '나') +
+      '<span class="msg-time">' + getNow() + '</span></div>',
       '<div class="msg-bubble">' + escHtml(text) + '</div>'
     ].join('');
     area.appendChild(div);
@@ -333,8 +362,49 @@
     if (selectedModel === 'mock') {
       var loadingEl2 = document.getElementById(loadingId);
       if (loadingEl2) loadingEl2.remove();
-      var mockAns = mockResponse(text);
-      addMsg('dooly', mockAns + '\n\n[Mock 모드]');
+
+      // FAQ 먼저 매칭
+      var faqMatch = null;
+      for (var fi = 0; fi < FAQS.length; fi++) {
+        var f = FAQS[fi];
+        var inQ = f.question.toLowerCase().includes(text.toLowerCase()) || text.toLowerCase().includes(f.question.toLowerCase());
+        var inK = f.keywords && f.keywords.some(function(k){ return text.toLowerCase().includes(k.toLowerCase()); });
+        if (inQ || inK) { faqMatch = f; break; }
+      }
+
+      // SOP 매칭
+      var sopMatch = null;
+      if (!faqMatch) {
+        for (var si = 0; si < SOPS.length; si++) {
+          var s = SOPS[si];
+          var inT = s.title.toLowerCase().includes(text.toLowerCase()) || text.toLowerCase().includes(s.title.toLowerCase());
+          var inSK = s.keywords && s.keywords.some(function(k){ return text.toLowerCase().includes(k.toLowerCase()); });
+          if (inT || inSK) { sopMatch = s; break; }
+        }
+      }
+
+      var mockAns = faqMatch
+        ? '[FAQ ' + faqMatch.id + '] ' + faqMatch.question + '\n\n' + faqMatch.answer
+        : sopMatch
+          ? '[SOP-' + sopMatch.id + '] ' + sopMatch.title + '\n\n' + sopMatch.body
+          : '확인이 필요합니다.\nSOP 또는 FAQ 탭에서 검색해보세요.';
+
+      // 메시지 + 출처 태그 + Mock 뱃지
+      var area = document.getElementById('chatArea');
+      var div = document.createElement('div');
+      div.className = 'msg dooly';
+      var tagHtml = faqMatch
+        ? renderSourceTags(faqMatch, 'faq')
+        : sopMatch
+          ? renderSourceTags(sopMatch, 'sop')
+          : '';
+      div.innerHTML = [
+        '<div class="msg-sender">Dooly<span class="msg-time">' + getNow() + '</span></div>',
+        '<div class="msg-bubble">' + escHtml(mockAns) + tagHtml +
+        '<div style="margin-top:6px;"><span style="background:#1e3a5f;color:#60a5fa;border:1px solid #60a5fa;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:700;">Mock</span></div></div>'
+      ].join('');
+      area.appendChild(div);
+      area.scrollTop = area.scrollHeight;
       saveChatHistory();
       return;
     }
