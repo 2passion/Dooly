@@ -200,6 +200,37 @@
     margin-left: 8px;
     font-weight: 400;
   }
+  .result-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .result-item { border-radius: 8px; overflow: hidden; }
+  .result-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    gap: 8px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .result-item-header.faq-header { background: rgba(74,222,128,0.12); color: #4ade80; }
+  .result-item-header.sop-header { background: rgba(251,146,60,0.12); color: #fb923c; }
+  .result-item-body {
+    display: none;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.85);
+  }
+  .result-item.open .result-item-body { display: block; }
+  .result-arrow { font-size: 11px; opacity: 0.6; flex-shrink: 0; }
+  .result-summary {
+    font-size: 13px;
+    opacity: 0.6;
+    margin-bottom: 6px;
+  }
 </style>
 <script src="data.js"></script>
 </head>
@@ -264,6 +295,11 @@
     var hh = String(d.getHours()).padStart(2, '0');
     var min = String(d.getMinutes()).padStart(2, '0');
     return d.getFullYear() + '-' + mm + '-' + dd + ' ' + hh + ':' + min;
+  }
+
+  function toggleResultItem(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('open');
   }
 
   function renderSourceTags(matched, type) {
@@ -363,46 +399,76 @@
       var loadingEl2 = document.getElementById(loadingId);
       if (loadingEl2) loadingEl2.remove();
 
-      // FAQ 먼저 매칭
-      var faqMatch = null;
-      for (var fi = 0; fi < FAQS.length; fi++) {
-        var f = FAQS[fi];
-        var inQ = f.question.toLowerCase().includes(text.toLowerCase()) || text.toLowerCase().includes(f.question.toLowerCase());
-        var inK = f.keywords && f.keywords.some(function(k){ return text.toLowerCase().includes(k.toLowerCase()); });
-        if (inQ || inK) { faqMatch = f; break; }
-      }
+      var lowerText = text.toLowerCase();
 
-      // SOP 매칭
-      var sopMatch = null;
-      if (!faqMatch) {
-        for (var si = 0; si < SOPS.length; si++) {
-          var s = SOPS[si];
-          var inT = s.title.toLowerCase().includes(text.toLowerCase()) || text.toLowerCase().includes(s.title.toLowerCase());
-          var inSK = s.keywords && s.keywords.some(function(k){ return text.toLowerCase().includes(k.toLowerCase()); });
-          if (inT || inSK) { sopMatch = s; break; }
-        }
-      }
+      // FAQ 전체 매칭
+      var faqMatches = FAQS.filter(function(f) {
+        var inQ = f.question.toLowerCase().includes(lowerText) || lowerText.includes(f.question.toLowerCase());
+        var inK = f.keywords && f.keywords.some(function(k){ return lowerText.includes(k.toLowerCase()); });
+        return inQ || inK;
+      });
 
-      var mockAns = faqMatch
-        ? '[FAQ ' + faqMatch.id + '] ' + faqMatch.question + '\n\n' + faqMatch.answer
-        : sopMatch
-          ? '[SOP-' + sopMatch.id + '] ' + sopMatch.title + '\n\n' + sopMatch.body
-          : '확인이 필요합니다.\nSOP 또는 FAQ 탭에서 검색해보세요.';
+      // SOP 전체 매칭
+      var sopMatches = SOPS.filter(function(s) {
+        var inT = s.title.toLowerCase().includes(lowerText) || lowerText.includes(s.title.toLowerCase());
+        var inK = s.keywords && s.keywords.some(function(k){ return lowerText.includes(k.toLowerCase()); });
+        return inT || inK;
+      });
 
-      // 메시지 + 출처 태그 + Mock 뱃지
+      var totalCount = faqMatches.length + sopMatches.length;
       var area = document.getElementById('chatArea');
       var div = document.createElement('div');
       div.className = 'msg dooly';
-      var tagHtml = faqMatch
-        ? renderSourceTags(faqMatch, 'faq')
-        : sopMatch
-          ? renderSourceTags(sopMatch, 'sop')
-          : '';
-      div.innerHTML = [
-        '<div class="msg-sender">Dooly<span class="msg-time">' + getNow() + '</span></div>',
-        '<div class="msg-bubble">' + escHtml(mockAns) + tagHtml +
-        '<div style="margin-top:6px;"><span style="background:#1e3a5f;color:#60a5fa;border:1px solid #60a5fa;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:700;">Mock</span></div></div>'
-      ].join('');
+      var msgId = 'mock_' + Date.now();
+
+      if (totalCount === 0) {
+        // 매칭 없음
+        div.innerHTML = [
+          '<div class="msg-sender">Dooly<span class="msg-time">' + getNow() + '</span></div>',
+          '<div class="msg-bubble">확인이 필요합니다.<br>SOP 또는 FAQ 탭에서 검색해보세요.',
+          '<div style="margin-top:6px;"><span style="background:#1e3a5f;color:#60a5fa;border:1px solid #60a5fa;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:700;">Mock</span></div>',
+          '</div>'
+        ].join('');
+      } else {
+        // 결과 목록 생성
+        var itemsHtml = '';
+
+        faqMatches.forEach(function(f, idx) {
+          var itemId = msgId + '_faq_' + idx;
+          itemsHtml += [
+            '<div class="result-item" id="' + itemId + '">',
+            '  <div class="result-item-header faq-header" onclick="toggleResultItem(\'' + itemId + '\')">',
+            '    <span>FAQ Q' + f.id + ' ' + escHtml(f.question) + '</span>',
+            '    <span class="result-arrow">▼</span>',
+            '  </div>',
+            '  <div class="result-item-body">' + escHtml(f.answer) + '</div>',
+            '</div>'
+          ].join('');
+        });
+
+        sopMatches.forEach(function(s, idx) {
+          var itemId = msgId + '_sop_' + idx;
+          itemsHtml += [
+            '<div class="result-item" id="' + itemId + '">',
+            '  <div class="result-item-header sop-header" onclick="toggleResultItem(\'' + itemId + '\')">',
+            '    <span>SOP ' + s.id + ' ' + escHtml(s.title) + '</span>',
+            '    <span class="result-arrow">▼</span>',
+            '  </div>',
+            '  <div class="result-item-body">' + escHtml(s.body) + '</div>',
+            '</div>'
+          ].join('');
+        });
+
+        div.innerHTML = [
+          '<div class="msg-sender">Dooly<span class="msg-time">' + getNow() + '</span></div>',
+          '<div class="msg-bubble">',
+          '<div class="result-summary">관련 항목 ' + totalCount + '개를 찾았습니다.</div>',
+          '<div class="result-list">' + itemsHtml + '</div>',
+          '<div style="margin-top:8px;"><span style="background:#1e3a5f;color:#60a5fa;border:1px solid #60a5fa;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:700;">Mock</span></div>',
+          '</div>'
+        ].join('');
+      }
+
       area.appendChild(div);
       area.scrollTop = area.scrollHeight;
       saveChatHistory();
