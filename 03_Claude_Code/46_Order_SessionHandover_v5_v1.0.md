@@ -1,3 +1,34 @@
+# 46_Order_SessionHandover_v5_v1.0.md
+# King Assistant OS v1.0
+# Claude Code 작업지시서
+
+Version: v1.0
+Date: 2026-06-28
+
+---
+
+# 작업 목표
+
+SESSION_HANDOVER v5.0 저장 및 업데이트
+
+---
+
+# STEP 1 — 현재 인수인계 파일을 히스토리로 복사
+
+```
+Copy-Item "C:\Obsidian\Dooly\00_System\02_SESSION_HANDOVER.md" "C:\Obsidian\Dooly\00_System\HANDOVER_HISTORY\09_SESSION_HANDOVER_v5.0.md"
+```
+
+기존 02_SESSION_HANDOVER.md 는 수정하지 않는다.
+
+---
+
+# STEP 2 — 02_SESSION_HANDOVER.md 최신 내용으로 덮어쓰기
+
+아래 내용으로 C:\Obsidian\Dooly\00_System\02_SESSION_HANDOVER.md 를 덮어써줘.
+
+---
+
 # SESSION_HANDOVER.md v5.0
 
 작성일: 2026-06-28
@@ -327,3 +358,17 @@ docs\ 폴더가 항상 최신 상태여야 한다.
    "첨부한 파일을 읽고 프로젝트 현황을 파악해줘.
     다음 작업은 46번부터 이어서 진행할거야."
 ```
+
+---
+
+# STEP 3 — git 커밋 및 push
+
+```
+cd C:\Obsidian\Dooly
+
+git add .
+git commit -m "docs: SESSION_HANDOVER v5.0 업데이트 (PWA + GitHub Pages 완료)"
+git push
+```
+
+# END OF ORDER
