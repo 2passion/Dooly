@@ -363,7 +363,7 @@
         }
       }
     })
-    }).catch(function(err) {
+    .catch(function(err) {
       var loadingEl = document.getElementById(loadingId);
       if (loadingEl) loadingEl.remove();
       var mockAnswer = mockResponse(text);
