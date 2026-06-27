@@ -1,6 +1,6 @@
 {
-  "name": "KING Assistant OS",
-  "short_name": "KING",
+  "name": "Dooly",
+  "short_name": "Dooly",
   "description": "킹수학 조교 운영 시스템",
   "start_url": "/Dooly/",
   "scope": "/Dooly/",
