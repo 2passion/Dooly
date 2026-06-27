@@ -207,6 +207,7 @@
 <div class="model-select-row">
   <span class="model-label">모델</span>
   <select class="model-select" id="modelSelect">
+    <option value="mock" selected>Mock — 오프라인 모드 (기본)</option>
     <option value="qwen2.5:7b">모델 A — qwen2.5:7b (고품질)</option>
     <option value="qwen2.5:3b">모델 B — qwen2.5:3b (빠름)</option>
     <option value="gemma3:4b">모델 C — gemma3:4b (균형)</option>
@@ -327,6 +328,16 @@
 
     // FastAPI 서버 호출
     var selectedModel = document.getElementById('modelSelect').value;
+
+    // Mock 모드: 서버 호출 없이 즉시 답변
+    if (selectedModel === 'mock') {
+      var loadingEl2 = document.getElementById(loadingId);
+      if (loadingEl2) loadingEl2.remove();
+      var mockAns = mockResponse(text);
+      addMsg('dooly', mockAns + '\n\n[Mock 모드]');
+      saveChatHistory();
+      return;
+    }
 
     fetch(RAG_SERVER + '/chat', {
       method: 'POST',
