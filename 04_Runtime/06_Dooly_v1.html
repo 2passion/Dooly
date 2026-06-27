@@ -363,12 +363,12 @@
         }
       }
     })
-    .catch(function(err) {
+    }).catch(function(err) {
       var loadingEl = document.getElementById(loadingId);
-      if (loadingEl) {
-        loadingEl.querySelector('.msg-bubble').textContent =
-          'RAG 서버에 연결할 수 없습니다.\nrun_server.bat 을 실행해주세요.';
-      }
+      if (loadingEl) loadingEl.remove();
+      var mockAnswer = mockResponse(text);
+      addMsg('dooly', mockAnswer + '\n\n[Mock 모드 — 서버 미연결]');
+      saveChatHistory();
     });
   }
 
