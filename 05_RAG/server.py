@@ -78,6 +78,18 @@ def serve_file(filename: str):
 async def redirect_html(filename: str):
     return RedirectResponse(url=f"/app/{filename}.html")
 
+@app.get("/manifest.json")
+async def manifest():
+    return FileResponse(os.path.join(RUNTIME_DIR, "manifest.json"), media_type="application/manifest+json")
+
+@app.get("/service-worker.js")
+async def service_worker():
+    return FileResponse(os.path.join(RUNTIME_DIR, "service-worker.js"), media_type="application/javascript")
+
+@app.get("/icons/{filename}")
+async def icons(filename: str):
+    return FileResponse(os.path.join(RUNTIME_DIR, "icons", filename))
+
 @app.post("/chat")
 def chat(req: ChatRequest):
     try:
