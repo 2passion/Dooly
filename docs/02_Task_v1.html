@@ -18,6 +18,16 @@
     margin: 0 auto;
   }
 
+  .sync-bar {
+    background: #0b0f1a;
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(77,163,255,0.15);
+    flex-shrink: 0;
+  }
+
   header {
     background: #0b0f1a;
     border-bottom: 1px solid rgba(77,163,255,0.2);
@@ -305,6 +315,18 @@
 </head>
 <body>
 
+<!-- 동기화 상태 표시 -->
+<div class="sync-bar">
+  <span id="sync-status" style="font-size: 14px; font-weight: bold;">🟡 확인 중...</span>
+  <button id="sync-btn"
+    onclick="syncTasks()"
+    style="display:none; padding: 4px 12px; font-size: 13px;
+           background: #4CAF50; color: white; border: none;
+           border-radius: 6px; cursor: pointer;">
+    🔄 동기화
+  </button>
+</div>
+
 <header>
   <h1>업무 관리</h1>
   <button class="add-btn" onclick="toggleForm()">+ 업무 추가</button>
@@ -388,6 +410,119 @@
 </nav>
 
 <script>
+  // ─── Task API 설정 ───────────────────────────────────────
+  const API_BASE = "http://192.168.0.10:8001";
+  const OFFLINE_KEY = "tasks_offline";
+  let isOnline = false;
+
+  async function checkOnlineStatus() {
+    try {
+      const res = await fetch(`${API_BASE}/ping`, {
+        signal: AbortSignal.timeout(3000)
+      });
+      const data = await res.json();
+      isOnline = data.status === "online";
+    } catch {
+      isOnline = false;
+    }
+    updateStatusBadge();
+  }
+
+  function updateStatusBadge() {
+    const badge = document.getElementById("sync-status");
+    const syncBtn = document.getElementById("sync-btn");
+    if (isOnline) {
+      badge.textContent = "🟢 온라인";
+      badge.style.color = "green";
+      syncBtn.style.display = "none";
+    } else {
+      badge.textContent = "🔴 오프라인";
+      badge.style.color = "red";
+      syncBtn.style.display = "inline-block";
+    }
+  }
+
+  async function loadTasks() {
+    if (isOnline) {
+      const res = await fetch(`${API_BASE}/tasks`);
+      return await res.json();
+    } else {
+      return JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
+    }
+  }
+
+  async function addTask(task) {
+    if (isOnline) {
+      await fetch(`${API_BASE}/tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(task)
+      });
+    } else {
+      const tasks = JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
+      task.id = Date.now();
+      task.created_at = new Date().toLocaleString("ko-KR");
+      tasks.push(task);
+      localStorage.setItem(OFFLINE_KEY, JSON.stringify(tasks));
+    }
+  }
+
+  async function updateTask(id, updated) {
+    if (isOnline) {
+      await fetch(`${API_BASE}/tasks/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated)
+      });
+    } else {
+      const tasks = JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
+      const idx = tasks.findIndex(t => String(t.id) === String(id));
+      if (idx !== -1) tasks[idx] = { ...tasks[idx], ...updated };
+      localStorage.setItem(OFFLINE_KEY, JSON.stringify(tasks));
+    }
+  }
+
+  async function deleteTask(id) {
+    if (isOnline) {
+      await fetch(`${API_BASE}/tasks/${id}`, { method: "DELETE" });
+    } else {
+      const tasks = JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
+      localStorage.setItem(OFFLINE_KEY,
+        JSON.stringify(tasks.filter(t => String(t.id) !== String(id))));
+    }
+  }
+
+  async function syncTasks() {
+    const syncBtn = document.getElementById("sync-btn");
+    const badge = document.getElementById("sync-status");
+    badge.textContent = "🟡 동기화 중...";
+    badge.style.color = "orange";
+    syncBtn.disabled = true;
+
+    await checkOnlineStatus();
+
+    if (isOnline) {
+      const offlineTasks = JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
+      for (const task of offlineTasks) {
+        await fetch(`${API_BASE}/tasks`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(task)
+        });
+      }
+      localStorage.removeItem(OFFLINE_KEY);
+      badge.textContent = "✅ 동기화 완료";
+      badge.style.color = "green";
+      setTimeout(() => updateStatusBadge(), 2000);
+    } else {
+      badge.textContent = "🔴 오프라인 (동기화 실패)";
+      badge.style.color = "red";
+    }
+    syncBtn.disabled = false;
+    await renderTasks();
+  }
+
+  // ─── 상수 ───────────────────────────────────────────────
   var STATUS_CYCLE = ['pending', 'in_progress', 'completed'];
   var STATUS_LABEL = { pending: '대기', in_progress: '진행중', completed: '완료' };
   var PRIORITY_COLOR = { urgent: '#ff4444', today: '#ffcc00', normal: '#3cc864' };
@@ -399,11 +534,7 @@
   var activeStatus = '전체';
   var editingId = null;
 
-  /* ── 데이터 로드/저장 ── */
-  function loadTasks()     { return JSON.parse(localStorage.getItem('tasks')     || '[]'); }
-  function saveTasks(t)    { localStorage.setItem('tasks',     JSON.stringify(t)); }
-  function loadAssignees() { return JSON.parse(localStorage.getItem('assignees') || '[]'); }
-  function saveAssignees(l){ localStorage.setItem('assignees', JSON.stringify(l)); }
+  /* ── 담당자 데이터 (localStorage 유지) ── */
   function loadAssigneeNames() {
     var raw = JSON.parse(localStorage.getItem('assignees') || '[]');
     return raw.map(function(a) { return typeof a === 'string' ? a : a.name; });
@@ -418,8 +549,6 @@
       localStorage.setItem('assignees', JSON.stringify(raw));
     }
   }
-
-  function genId() { return 'T' + Date.now(); }
 
   /* ── XSS 방지 ── */
   function escHtml(str) {
@@ -492,7 +621,7 @@
   }
 
   /* ── 업무 저장 ── */
-  function saveTask() {
+  async function saveTask() {
     var title    = document.getElementById('inputTitle').value.trim();
     var assignee = document.getElementById('inputAssignee').value.trim();
     var priority = document.getElementById('inputPriority').value;
@@ -500,9 +629,7 @@
 
     if (!title) { alert('업무 제목을 입력하세요.'); return; }
 
-    var tasks = loadTasks();
-    tasks.unshift({
-      id: genId(),
+    await addTask({
       title: title,
       assignee: assignee || '미지정',
       content: content,
@@ -510,7 +637,6 @@
       priority: priority,
       created_at: getToday()
     });
-    saveTasks(tasks);
     addAssigneeIfNew(assignee);
 
     document.getElementById('inputTitle').value    = '';
@@ -520,28 +646,26 @@
     document.getElementById('formPanel').classList.remove('visible');
 
     renderFilters();
-    renderTasks();
+    await renderTasks();
   }
 
   /* ── 상태 순환 ── */
-  function cycleStatus(id) {
-    var tasks = loadTasks().map(function(t) {
-      if (t.id === id) {
-        var idx = STATUS_CYCLE.indexOf(t.status);
-        t.status = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
-      }
-      return t;
-    });
-    saveTasks(tasks);
-    renderTasks();
+  async function cycleStatus(id) {
+    var tasks = await loadTasks();
+    var task = tasks.find(function(t) { return String(t.id) === String(id); });
+    if (!task) return;
+    var idx = STATUS_CYCLE.indexOf(task.status);
+    var newStatus = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+    await updateTask(id, { status: newStatus });
+    await renderTasks();
   }
 
   /* ── 삭제 ── */
-  function deleteTask(id, e) {
+  async function handleDeleteTask(id, e) {
     e.stopPropagation();
     if (!confirm('이 업무를 삭제하시겠습니까?')) return;
-    saveTasks(loadTasks().filter(function(t) { return t.id !== id; }));
-    renderTasks();
+    await deleteTask(id);
+    await renderTasks();
   }
 
   /* ── 수정 모드 진입 ── */
@@ -557,7 +681,7 @@
     renderTasks();
   }
 
-  function saveEdit(id, e) {
+  async function saveEdit(id, e) {
     if (e) e.stopPropagation();
     var title    = document.getElementById('editTitle_'    + id).value.trim();
     var assignee = document.getElementById('editAssignee_' + id).value.trim();
@@ -566,20 +690,16 @@
 
     if (!title) { alert('업무 제목을 입력하세요.'); return; }
 
-    var tasks = loadTasks().map(function(t) {
-      if (t.id === id) {
-        t.title    = title;
-        t.assignee = assignee || '미지정';
-        t.priority = priority;
-        t.content  = content;
-      }
-      return t;
+    await updateTask(id, {
+      title: title,
+      assignee: assignee || '미지정',
+      priority: priority,
+      content: content
     });
-    saveTasks(tasks);
     addAssigneeIfNew(assignee);
     editingId = null;
     renderFilters();
-    renderTasks();
+    await renderTasks();
   }
 
   /* ── 수정 폼 HTML 생성 ── */
@@ -621,8 +741,8 @@
   }
 
   /* ── 목록 렌더 ── */
-  function renderTasks() {
-    var tasks = loadTasks();
+  async function renderTasks() {
+    var tasks = await loadTasks();
     var container = document.getElementById('taskList');
 
     var STATUS_MAP = { '대기': 'pending', '진행중': 'in_progress', '완료': 'completed' };
@@ -640,7 +760,7 @@
     }
 
     container.innerHTML = filtered.map(function(t) {
-      if (editingId === t.id) return renderEditForm(t);
+      if (String(editingId) === String(t.id)) return renderEditForm(t);
 
       var label = STATUS_LABEL[t.status] || t.status;
       var contentHtml = t.content
@@ -659,7 +779,7 @@
         '    <span class="task-assignee">담당: ' + escHtml(t.assignee) + '</span>',
         '    <span class="badge badge-' + t.status + '">' + label + '</span>',
         '    <button class="edit-btn"   onclick="editTask(\'' + t.id + '\', event)">수정</button>',
-        '    <button class="delete-btn" onclick="deleteTask(\'' + t.id + '\', event)">삭제</button>',
+        '    <button class="delete-btn" onclick="handleDeleteTask(\'' + t.id + '\', event)">삭제</button>',
         '  </div>',
         '</div>'
       ].join('');
@@ -669,11 +789,19 @@
   }
 
   /* ── JSON 다운로드/업로드 ── */
-  function downloadTasks() { downloadJSON(loadTasks(), 'task_' + getToday() + '.json'); }
+  function downloadTasks() {
+    loadTasks().then(function(data) {
+      downloadJSON(data, 'task_' + getToday() + '.json');
+    });
+  }
 
   function uploadTasks() {
     uploadJSON(function(data) {
-      saveTasks(data);
+      if (isOnline) {
+        alert('온라인 모드에서는 JSON 업로드가 지원되지 않습니다.\n오프라인 상태에서 사용하세요.');
+        return;
+      }
+      localStorage.setItem(OFFLINE_KEY, JSON.stringify(data));
       renderFilters();
       renderTasks();
     });
@@ -766,22 +894,28 @@
   }
 
   /* ── 초기화 ── */
-  renderFilters();
-  renderTasks();
+  window.addEventListener("load", async function() {
+    await checkOnlineStatus();
+    renderFilters();
+    await renderTasks();
+    setInterval(checkOnlineStatus, 30000);
 
-  var taskContainer = document.getElementById('taskList');
-  function taskSaveOrder(newOrder) {
-    var allTasks = loadTasks();
-    var idSet = {};
-    newOrder.forEach(function(id) { idSet[id] = true; });
-    var reordered = newOrder.map(function(id) {
-      return allTasks.find(function(t) { return t.id === id; });
-    }).filter(Boolean);
-    var others = allTasks.filter(function(t) { return !idSet[t.id]; });
-    saveTasks(reordered.concat(others));
-  }
-  addMouseDrag(taskContainer, taskSaveOrder);
-  addTouchDrag(taskContainer, taskSaveOrder);
+    var taskContainer = document.getElementById('taskList');
+    function taskSaveOrder(newOrder) {
+      if (!isOnline) {
+        var allTasks = JSON.parse(localStorage.getItem(OFFLINE_KEY) || '[]');
+        var idSet = {};
+        newOrder.forEach(function(id) { idSet[id] = true; });
+        var reordered = newOrder.map(function(id) {
+          return allTasks.find(function(t) { return String(t.id) === String(id); });
+        }).filter(Boolean);
+        var others = allTasks.filter(function(t) { return !idSet[String(t.id)]; });
+        localStorage.setItem(OFFLINE_KEY, JSON.stringify(reordered.concat(others)));
+      }
+    }
+    addMouseDrag(taskContainer, taskSaveOrder);
+    addTouchDrag(taskContainer, taskSaveOrder);
+  });
 </script>
 
 </body>
