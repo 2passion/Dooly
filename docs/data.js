@@ -1,3 +1,4 @@
+// cache-bust: 2026-06-28
 // data.js
 // King Assistant OS v1.0
 // SOP + FAQ 공통 데이터 파일
