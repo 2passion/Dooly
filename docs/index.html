@@ -344,7 +344,7 @@
 
   /* ── 홈 렌더 (업무 카운트 + 공지) ── */
   function render() {
-    var tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    var tasks = JSON.parse(localStorage.getItem('tasks_offline') || '[]');
     document.getElementById('count-pending').textContent  = tasks.filter(function(t) { return t.status === 'pending'; }).length;
     document.getElementById('count-progress').textContent = tasks.filter(function(t) { return t.status === 'in_progress'; }).length;
     document.getElementById('count-done').textContent     = tasks.filter(function(t) { return t.status === 'completed'; }).length;
@@ -424,7 +424,7 @@
     var now = new Date();
     var todayStr = formatDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
 
-    var tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    var tasks = JSON.parse(localStorage.getItem('tasks_offline') || '[]');
     var taskDates = {};
     tasks.forEach(function(t) { if (t.created_at) taskDates[t.created_at] = true; });
 
@@ -478,7 +478,7 @@
   }
 
   function renderDateTasks(dateStr) {
-    var tasks = JSON.parse(localStorage.getItem('tasks') || '[]')
+    var tasks = JSON.parse(localStorage.getItem('tasks_offline') || '[]')
                   .filter(function(t) { return t.created_at === dateStr; });
     var container = document.getElementById('dateTasks');
     var titleHtml = '<div class="date-tasks-title">' + formatDisplayDate(dateStr) + ' 업무</div>';
