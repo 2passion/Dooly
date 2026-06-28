@@ -1,7 +1,7 @@
 // service-worker.js
 // King Assistant OS v1.0 PWA
 
-const CACHE_NAME = 'king-assistant-v1';
+const CACHE_NAME = 'king-assistant-v2';
 const URLS_TO_CACHE = [
   '/Dooly/',
   '/Dooly/index.html',
