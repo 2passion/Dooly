@@ -379,7 +379,7 @@
     ? 'http://localhost:8001'
     : location.protocol + '//' + location.hostname + ':8001';
 
-  var WORKER_URL = 'https://dooly-claude-proxy.2davidpassion.workers.dev';
+  var WORKER_URL = 'https://dooly-eight.vercel.app/api/gemini';
 
   function buildDataContext() {
     var faqItems = FAQS.map(function(f) { return 'Q: ' + f.question + '\nA: ' + f.answer; }).join('\n\n');
