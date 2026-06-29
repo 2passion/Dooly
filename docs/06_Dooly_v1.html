@@ -196,6 +196,32 @@
   .source-tag.faq { background: rgba(60,200,100,0.1); border: 1px solid rgba(60,200,100,0.3); color: #3cc864; }
   .source-tag.sop { background: rgba(255,180,50,0.1); border: 1px solid rgba(255,180,50,0.3); color: #ffb432; }
   .source-tag.doc { background: rgba(180,130,255,0.1); border: 1px solid rgba(180,130,255,0.3); color: #b482ff; }
+  .source-tags {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .faq-tag {
+    background-color: #1a4a2e;
+    color: #4caf82;
+    border: 1px solid #4caf82;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 10px;
+    cursor: default;
+  }
+  .sop-tag {
+    background-color: #4a2e1a;
+    color: #ff9944;
+    border: 1px solid #ff9944;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 10px;
+    cursor: default;
+  }
   .msg-time {
     font-size: 10px;
     opacity: 0.4;
@@ -400,6 +426,30 @@
     return data.answer || '답변을 가져올 수 없습니다.';
   }
 
+  function parseGeminiSources(text) {
+    var sourcePattern = /참고[:：]\s*(.+)$/m;
+    var match = text.match(sourcePattern);
+    if (!match) return { cleanText: text, tags: [] };
+    var cleanText = text.replace(sourcePattern, '').trim();
+    var sourceStr = match[1];
+    var items = sourceStr.match(/\[([^\]]+)\]/g) || [];
+    var tags = items.map(function(item) {
+      var label = item.replace(/[\[\]]/g, '').trim();
+      if (label.startsWith('FAQ')) return { type: 'faq', label: label };
+      return { type: 'sop', label: label };
+    });
+    return { cleanText: cleanText, tags: tags };
+  }
+
+  function renderGeminiTags(tags) {
+    if (!tags || tags.length === 0) return '';
+    var tagHtml = tags.map(function(tag) {
+      var cls = tag.type === 'faq' ? 'faq-tag' : 'sop-tag';
+      return '<span class="' + cls + '">' + escHtml(tag.label) + '</span>';
+    }).join('');
+    return '<div class="source-tags">' + tagHtml + '</div>';
+  }
+
   function sendMessage() {
     var input = document.getElementById('chatInput');
     var text = input.value.trim();
@@ -503,7 +553,10 @@
         .then(function(answer) {
           var loadingEl = document.getElementById(loadingId);
           if (loadingEl) {
-            loadingEl.querySelector('.msg-bubble').textContent = answer;
+            var parsed = parseGeminiSources(answer);
+            var formattedText = parsed.cleanText.replace(/\n/g, '<br>');
+            var tagsHtml = renderGeminiTags(parsed.tags);
+            loadingEl.querySelector('.msg-bubble').innerHTML = formattedText + tagsHtml;
           }
           saveChatHistory();
         })
