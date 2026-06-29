@@ -1,6 +1,6 @@
 {
-  "name": "둘리 (Dooly)",
-  "short_name": "둘리",
+  "name": "Dooly",
+  "short_name": "Dooly",
   "description": "킹수학 조교 AI 비서",
   "start_url": "/06_Dooly_v1.html",
   "display": "standalone",
