@@ -245,6 +245,7 @@
   <span class="model-label">모델</span>
   <select class="model-select" id="modelSelect">
     <option value="mock" selected>Mock — 오프라인 모드 (기본)</option>
+    <option value="gemini">Gemini AI — Dooly 모드 (온라인)</option>
     <option value="qwen2.5:7b">모델 A — qwen2.5:7b (고품질)</option>
     <option value="qwen2.5:3b">모델 B — qwen2.5:3b (빠름)</option>
     <option value="gemma3:4b">모델 C — gemma3:4b (균형)</option>
@@ -378,6 +379,25 @@
     ? 'http://localhost:8001'
     : location.protocol + '//' + location.hostname + ':8001';
 
+  var WORKER_URL = 'https://dooly-claude-proxy.2davidpassion.workers.dev';
+
+  function buildDataContext() {
+    var faqItems = FAQS.map(function(f) { return 'Q: ' + f.question + '\nA: ' + f.answer; }).join('\n\n');
+    var sopItems = SOPS.map(function(s) { return '[' + s.category + '] ' + s.title + ': ' + s.body; }).join('\n\n');
+    return '=== FAQ ===\n' + faqItems + '\n\n=== SOP ===\n' + sopItems;
+  }
+
+  async function getGeminiAnswer(userMessage) {
+    var context = buildDataContext();
+    var response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: userMessage, context: context })
+    });
+    var data = await response.json();
+    return data.answer || '답변을 가져올 수 없습니다.';
+  }
+
   function sendMessage() {
     var input = document.getElementById('chatInput');
     var text = input.value.trim();
@@ -472,6 +492,25 @@
       area.appendChild(div);
       area.scrollTop = area.scrollHeight;
       saveChatHistory();
+      return;
+    }
+
+    // Gemini AI 모드
+    if (selectedModel === 'gemini') {
+      getGeminiAnswer(text)
+        .then(function(answer) {
+          var loadingEl = document.getElementById(loadingId);
+          if (loadingEl) {
+            loadingEl.querySelector('.msg-bubble').textContent = answer;
+          }
+          saveChatHistory();
+        })
+        .catch(function(err) {
+          var loadingEl = document.getElementById(loadingId);
+          if (loadingEl) loadingEl.remove();
+          addMsg('dooly', '오류가 발생했습니다: ' + err.message);
+          saveChatHistory();
+        });
       return;
     }
 
