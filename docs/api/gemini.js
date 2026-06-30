@@ -57,8 +57,9 @@ ${userMessage}`
     });
 
     const geminiData = await geminiResponse.json();
+    const answer = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(geminiData);
 
-    return new Response(JSON.stringify(geminiData), {
+    return new Response(JSON.stringify({ answer }), {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
