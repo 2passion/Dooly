@@ -411,17 +411,16 @@
 
 <script>
   // ─── Task API 설정 ───────────────────────────────────────
-  const API_BASE = "http://192.168.0.10:8001";
+  const TASK_API = '/api/tasks';
   const OFFLINE_KEY = "tasks_offline";
   let isOnline = false;
 
   async function checkOnlineStatus() {
     try {
-      const res = await fetch(`${API_BASE}/ping`, {
+      const res = await fetch(TASK_API, {
         signal: AbortSignal.timeout(3000)
       });
-      const data = await res.json();
-      isOnline = data.status === "online";
+      isOnline = res.ok;
     } catch {
       isOnline = false;
     }
@@ -444,7 +443,7 @@
 
   async function loadTasks() {
     if (isOnline) {
-      const res = await fetch(`${API_BASE}/tasks`);
+      const res = await fetch(TASK_API);
       return await res.json();
     } else {
       return JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
@@ -453,7 +452,7 @@
 
   async function addTask(task) {
     if (isOnline) {
-      await fetch(`${API_BASE}/tasks`, {
+      await fetch(TASK_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(task)
@@ -469,10 +468,10 @@
 
   async function updateTask(id, updated) {
     if (isOnline) {
-      await fetch(`${API_BASE}/tasks/${id}`, {
-        method: "PUT",
+      await fetch(TASK_API, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated)
+        body: JSON.stringify({ id, ...updated })
       });
     } else {
       const tasks = JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
@@ -484,7 +483,11 @@
 
   async function deleteTask(id) {
     if (isOnline) {
-      await fetch(`${API_BASE}/tasks/${id}`, { method: "DELETE" });
+      await fetch(TASK_API, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      });
     } else {
       const tasks = JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
       localStorage.setItem(OFFLINE_KEY,
@@ -504,7 +507,7 @@
     if (isOnline) {
       const offlineTasks = JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
       for (const task of offlineTasks) {
-        await fetch(`${API_BASE}/tasks`, {
+        await fetch(TASK_API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(task)
