@@ -17,10 +17,12 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/tasks?order=created_at.asc`,
-        { headers }
-      );
+      const assignee = req.query.assignee;
+      let url = `${SUPABASE_URL}/rest/v1/tasks?order=created_at.asc`;
+      if (assignee && assignee !== '전체' && assignee !== '') {
+        url += `&assignee=eq.${encodeURIComponent(assignee)}`;
+      }
+      const response = await fetch(url, { headers });
       const data = await response.json();
       return res.status(200).json(data);
     }

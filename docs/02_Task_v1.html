@@ -441,9 +441,12 @@
     }
   }
 
-  async function loadTasks() {
+  async function loadTasks(assigneeFilter) {
     if (isOnline) {
-      const res = await fetch(TASK_API);
+      var params = (assigneeFilter && assigneeFilter !== '전체')
+        ? '?assignee=' + encodeURIComponent(assigneeFilter)
+        : '';
+      const res = await fetch(TASK_API + params);
       return await res.json();
     } else {
       return JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
@@ -609,9 +612,9 @@
     }).join('');
   }
 
-  function setPriorityFilter(p) { activePriority = p; renderFilters(); renderTasks(); }
-  function setStatusFilter(s) { activeStatus = s; renderFilters(); renderTasks(); }
-  function setAssigneeFilter(a) { activeAssignee = a; renderFilters(); renderTasks(); }
+  function setPriorityFilter(p) { activePriority = p; localStorage.setItem('task_filter_priority', p); renderFilters(); renderTasks(); }
+  function setStatusFilter(s) { activeStatus = s; localStorage.setItem('task_filter_status', s); renderFilters(); renderTasks(); }
+  function setAssigneeFilter(a) { activeAssignee = a; localStorage.setItem('task_filter_assignee', a); renderFilters(); renderTasks(); }
 
   /* ── 폼 토글 ── */
   function toggleForm() {
@@ -745,7 +748,7 @@
 
   /* ── 목록 렌더 ── */
   async function renderTasks() {
-    var tasks = await loadTasks();
+    var tasks = await loadTasks(activeAssignee);
     var container = document.getElementById('taskList');
 
     var STATUS_MAP = { '대기': 'pending', '진행중': 'in_progress', '완료': 'completed' };
@@ -898,10 +901,14 @@
 
   /* ── 초기화 ── */
   window.addEventListener("load", async function() {
+    activePriority = localStorage.getItem('task_filter_priority') || '전체';
+    activeAssignee = localStorage.getItem('task_filter_assignee') || '전체';
+    activeStatus   = localStorage.getItem('task_filter_status')   || '전체';
     await checkOnlineStatus();
     renderFilters();
     await renderTasks();
     setInterval(checkOnlineStatus, 30000);
+    setInterval(async function() { await renderTasks(); }, 30000);
 
     var taskContainer = document.getElementById('taskList');
     function taskSaveOrder(newOrder) {
