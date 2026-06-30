@@ -46,7 +46,7 @@ ${userMessage}`
           }
         ],
         generationConfig: {
-          maxOutputTokens: 1000,
+          maxOutputTokens: 2048,
           temperature: 0.3,
         }
       }),
