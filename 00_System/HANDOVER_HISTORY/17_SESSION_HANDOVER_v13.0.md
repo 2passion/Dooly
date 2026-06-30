@@ -1,9 +1,9 @@
-# 02_SESSION_HANDOVER.md v13.0
+# 02_SESSION_HANDOVER.md v12.0
 
-작성일: 2026-06-30
-세션: 2026-06-30 (주간)
+작성일: 2026-06-29
+세션: 2026-06-29 (주간)
 프로젝트 버전: King Assistant OS v2.0
-현재 마일스톤: Task #52 전체 완료 + 출처 태그 안정화
+현재 마일스톤: Task #52 전체 완료 — PWA 아이콘 + Gemini UI 개선
 
 ---
 
@@ -89,11 +89,6 @@ Supabase → Task 동기화 (Task #53 예정)
 | 52-E | SW v3 + Gemini 태그 UI + 줄바꿈 | d98cfb9 | ✅ |
 | 52-F | manifest 링크 태그 추가 | 9a24c94 | ✅ |
 | 추가 | PWA 이름 Dooly 통일 | e31eebb | ✅ |
-| 52-G | Gemini 출처 번호 수정 시도 | ed8f884 | ⚠️ 롤백됨 |
-| 52-H | maxOutputTokens 수정 시도 | 8f6eccf | ⚠️ 롤백됨 |
-| 52-I | Gemini 응답 파싱 변경 시도 | 341aa1a | ⚠️ 롤백됨 |
-| 52-X | 52-F 롤백 | 5281c6e | ✅ |
-| 52-Y | 52-E 롤백 → 출처 태그 복원 | 35f7576 | ✅ |
 
 ---
 
@@ -109,18 +104,24 @@ Supabase → Task 동기화 (Task #53 예정)
 
 # 5. 시행착오 기록 (신규 추가분)
 
-## 에러 20: 출처 번호 수정 시도 → 성능 저하 (52-G~52-I)
-- 시도: Gemini 출처를 "FAQ Q: 제목" → "FAQ Q1" 번호만 표시로 변경
-- 방법: buildDataContext() 수정 + parseGeminiSources() 교체
-- 결과: 속도 10초, 답변 잘림 발생
-- 원인 추정: buildDataContext() 수정으로 컨텍스트 구조 변경 → Gemini 혼란
-- 해결: 52-E(d98cfb9) 상태로 롤백
-- 교훈: buildDataContext()는 건드리지 말 것. 출처 번호 재시도 시 시스템 프롬프트만 수정
+## 에러 17: manifest.json 링크 태그 누락 (핵심!)
+- 증상: PWA 홈 화면 아이콘이 V + Chrome 로고로 표시
+- 원인: 06_Dooly_v1.html `<head>`에 `<link rel="manifest">` 태그 없음
+- 확인: F12 → Application → Manifest → "No manifest detected"
+- 해결: manifest 링크 태그 3줄 추가
+- 향후 주의: HTML 파일 신규 생성 시 반드시 manifest 링크 태그 포함
 
-## 에러 21: 52-F로 롤백했더니 출처 태그 사라짐
-- 원인: 출처 태그 기능은 52-E에서 추가된 것 (52-F는 manifest 태그만 추가)
-- 해결: 52-E(d98cfb9)로 롤백하여 출처 태그 복원
-- 결과: FAQ Q1/Q5, SOP 10/SOP 21 태그 정상 표시 ✅
+## 에러 18: Gemini SOP 출처 번호 미표시
+- 증상: SOP 태그에 번호 없이 카테고리명([장비], [예외상황])만 표시
+- 원인: Gemini가 "[SOP 10]" 형식 대신 카테고리명으로 반환
+- 현재: parseGeminiSources()로 태그 시각화는 됨
+- 미해결: 번호 표시는 #52-G 예정
+
+## 에러 19: 삼성 One UI PWA 아이콘 캐시
+- 증상: 서버 아이콘 교체 후에도 홈 화면 아이콘 변경 안 됨
+- 원인: manifest 링크 태그 누락이 진짜 원인이었음 (캐시 문제 아님)
+- 해결: manifest 링크 태그 추가 후 재설치로 해결
+- 교훈: F12 Application 탭으로 먼저 확인했으면 빠르게 해결 가능했음
 
 ---
 
@@ -129,12 +130,11 @@ Supabase → Task 동기화 (Task #53 예정)
 | 기능 | 상태 | 비고 |
 |------|------|------|
 | Gemini AI 답변 | ✅ | gemini-2.5-flash |
-| 출처 태그 표시 | ✅ | FAQ Q1, SOP 10 형식 |
+| 출처 태그 표시 | ⚠️ | FAQ 번호 ✅ / SOP 번호 ❌ (카테고리만) |
 | 말풍선 텍스트 | ✅ | 흰색 텍스트 |
 | 답변 줄바꿈 | ✅ | \n → <br> |
 | PWA 아이콘 | ✅ | 공룡 아이콘 |
 | PWA 이름 | ✅ | Dooly |
-| manifest 링크 태그 | ✅ | 06_Dooly_v1.html |
 
 ---
 
@@ -142,7 +142,8 @@ Supabase → Task 동기화 (Task #53 예정)
 
 | 번호 | 작업 | 우선순위 | 상태 |
 |------|------|---------|------|
-| **53** | **Supabase Task 동기화** | **높음** | **🔜 다음** |
+| 52-G | SOP 출처 번호 표시 수정 | 보통 | 🔜 대기 |
+| **53** | **Supabase Task 동기화** | **높음** | **🔜 다음 세션** |
 | 54 | GitHub Pages 최신버전 업데이트 | 낮음 | 🔜 대기 |
 
 ---
@@ -157,23 +158,11 @@ Supabase → Task 동기화 (Task #53 예정)
 | Gemini 크레딧 | ₩25,000 충전 완료 |
 | Gemini 프록시 경로 | docs/api/gemini.js |
 | 서비스워커 버전 | king-assistant-v3 |
-| 최신 커밋 | 35f7576 |
+| 최신 커밋 | e31eebb |
 
 ---
 
-# 9. 핵심 주의사항 (다음 세션 필독)
-
-## buildDataContext() 수정 금지
-- Gemini에게 전달하는 컨텍스트 구조를 변경하면 속도 저하 + 답변 잘림 발생
-- 출처 번호 표시 개선 시 **시스템 프롬프트 지시문만** 수정할 것
-
-## 롤백 기준 커밋
-- 현재 안정 상태: 35f7576 (52-E 복원)
-- 문제 발생 시 위 커밋으로 롤백
-
----
-
-# 10. 새 세션 시작 방법
+# 9. 새 세션 시작 방법
 
 1. 02_SESSION_HANDOVER.md 첨부
 2. 04_PROJECT_GUIDE_v1.0.md 첨부
