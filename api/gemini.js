@@ -46,16 +46,15 @@ ${userMessage}`
           }
         ],
         generationConfig: {
-          maxOutputTokens: 2048,
+          maxOutputTokens: 1000,
           temperature: 0.3,
         }
       }),
     });
 
     const geminiData = await geminiResponse.json();
-    const answer = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(geminiData);
 
-    return new Response(JSON.stringify({ answer }), {
+    return new Response(JSON.stringify(geminiData), {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',

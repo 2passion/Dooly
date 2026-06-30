@@ -427,7 +427,13 @@
       body: JSON.stringify({ message: userMessage, context: context })
     });
     var data = await response.json();
-    return data.answer || '답변을 가져올 수 없습니다.';
+    var text = data.candidates &&
+               data.candidates[0] &&
+               data.candidates[0].content &&
+               data.candidates[0].content.parts &&
+               data.candidates[0].content.parts[0] &&
+               data.candidates[0].content.parts[0].text;
+    return text || data.answer || '답변을 가져올 수 없습니다.';
   }
 
   function parseGeminiSources(text) {
