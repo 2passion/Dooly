@@ -413,9 +413,10 @@
   var WORKER_URL = 'https://dooly-eight.vercel.app/api/gemini';
 
   function buildDataContext() {
-    var faqItems = FAQS.map(function(f) { return 'Q: ' + f.question + '\nA: ' + f.answer; }).join('\n\n');
-    var sopItems = SOPS.map(function(s) { return '[' + s.category + '] ' + s.title + ': ' + s.body; }).join('\n\n');
-    return '=== FAQ ===\n' + faqItems + '\n\n=== SOP ===\n' + sopItems;
+    var faqItems = FAQS.map(function(f) { return '[FAQ Q' + f.id + '] Q: ' + f.question + '\nA: ' + f.answer; }).join('\n\n');
+    var sopItems = SOPS.map(function(s) { return '[SOP ' + s.id + '] ' + s.title + ': ' + s.body; }).join('\n\n');
+    var instruction = '답변 마지막에 참고한 자료를 반드시 아래 형식으로만 표시하세요.\nFAQ를 참고했으면: [FAQ Q1] 또는 [FAQ Q2] (숫자만, 제목 없이)\nSOP를 참고했으면: [SOP 1] 또는 [SOP 3] (숫자만, 카테고리명 없이)\n형식을 절대 바꾸지 마세요. 제목이나 카테고리명을 붙이지 마세요.';
+    return instruction + '\n\n=== FAQ ===\n' + faqItems + '\n\n=== SOP ===\n' + sopItems;
   }
 
   async function getGeminiAnswer(userMessage) {
@@ -430,18 +431,22 @@
   }
 
   function parseGeminiSources(text) {
-    var sourcePattern = /참고[:：]\s*(.+)$/m;
-    var match = text.match(sourcePattern);
-    if (!match) return { cleanText: text, tags: [] };
-    var cleanText = text.replace(sourcePattern, '').trim();
-    var sourceStr = match[1];
-    var items = sourceStr.match(/\[([^\]]+)\]/g) || [];
-    var tags = items.map(function(item) {
-      var label = item.replace(/[\[\]]/g, '').trim();
-      if (label.startsWith('FAQ')) return { type: 'faq', label: label };
-      return { type: 'sop', label: label };
+    var sources = [];
+    var faqMatches = text.match(/\[FAQ\s*Q(\d+)\]/gi) || [];
+    faqMatches.forEach(function(match) {
+      var num = match.match(/\d+/)[0];
+      if (!sources.find(function(s) { return s.label === 'FAQ Q' + num; })) {
+        sources.push({ label: 'FAQ Q' + num, type: 'faq' });
+      }
     });
-    return { cleanText: cleanText, tags: tags };
+    var sopMatches = text.match(/\[SOP\s*(\d+)\]/gi) || [];
+    sopMatches.forEach(function(match) {
+      var num = match.match(/\d+/)[0];
+      if (!sources.find(function(s) { return s.label === 'SOP ' + num; })) {
+        sources.push({ label: 'SOP ' + num, type: 'sop' });
+      }
+    });
+    return sources;
   }
 
   function renderGeminiTags(tags) {
@@ -556,9 +561,10 @@
         .then(function(answer) {
           var loadingEl = document.getElementById(loadingId);
           if (loadingEl) {
-            var parsed = parseGeminiSources(answer);
-            var formattedText = parsed.cleanText.replace(/\n/g, '<br>');
-            var tagsHtml = renderGeminiTags(parsed.tags);
+            var sources = parseGeminiSources(answer);
+            var cleanText = answer.replace(/\[FAQ\s*Q\d+\]/gi, '').replace(/\[SOP\s*\d+\]/gi, '').trim();
+            var formattedText = cleanText.replace(/\n/g, '<br>');
+            var tagsHtml = renderGeminiTags(sources);
             loadingEl.querySelector('.msg-bubble').innerHTML = formattedText + tagsHtml;
           }
           saveChatHistory();
